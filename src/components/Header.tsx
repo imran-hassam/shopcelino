@@ -43,7 +43,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur transition-shadow ${
+      className={`sticky top-0 z-50 border-b border-line bg-white transition-shadow ${
         scrolled ? "shadow-[0_4px_20px_-12px_rgba(34,32,29,.35)]" : ""
       }`}
     >
