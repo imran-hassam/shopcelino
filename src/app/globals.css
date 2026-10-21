@@ -1,17 +1,38 @@
 @import "tailwindcss";
 
-/* Brand tokens — filled in once the logo and brand colours are supplied. */
+/* Shop Celino brand colours — supplied by the client. Do not change. */
 :root {
-  --background: #ffffff;
-  --foreground: #111111;
+  --primary-color: #C6AC18;
+  --primary-hover: #9B8215;
+  --secondary-color: #E6D9A8;
+  --background-color: #FAF8F2;
+  --card-background: #F3EEE3;
+  --heading-color: #22201D;
+  --text-color: #22201D;
+  --muted-text: #8A8075;
+  --accent-color: #E6EBE3;
+  --white: #FFFFFF;
+  --footer-background: #22201D;
+  --footer-text: #FAF8F2;
 }
 
+/* Expose as Tailwind utilities: bg-primary, text-heading, bg-card, etc. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-primary: var(--primary-color);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary-color);
+  --color-background: var(--background-color);
+  --color-card: var(--card-background);
+  --color-heading: var(--heading-color);
+  --color-foreground: var(--text-color);
+  --color-muted: var(--muted-text);
+  --color-accent: var(--accent-color);
+  --color-white: var(--white);
+  --color-footer: var(--footer-background);
+  --color-footer-text: var(--footer-text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--background-color);
+  color: var(--text-color);
 }
