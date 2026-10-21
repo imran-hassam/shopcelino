@@ -15,7 +15,7 @@ export function Carousel({ children, label }: { children: React.ReactNode; label
     <div className="relative" role="region" aria-roledescription="carousel" aria-label={label}>
       <div
         ref={ref}
-        className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth px-1 pb-2 [&>*]:w-[72%] [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-[calc((100%-20px)/2)] md:[&>*]:w-[calc((100%-40px)/3)] lg:[&>*]:w-[calc((100%-60px)/4)]"
+        className="no-scrollbar relative -mx-1 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth px-1 pb-2 [&>*]:w-[72%] [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-[calc((100%-20px)/2)] md:[&>*]:w-[calc((100%-40px)/3)] lg:[&>*]:w-[calc((100%-60px)/4)]"
       >
         {children}
       </div>

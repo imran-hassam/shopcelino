@@ -57,7 +57,7 @@ export function ProductGallery({ images, name }: { images: WCImage[]; name: stri
       {/* Mobile: swipeable */}
       <div
         ref={stripRef}
-        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-2xl md:hidden"
+        className="no-scrollbar relative flex snap-x snap-mandatory overflow-x-auto rounded-2xl md:hidden"
         onScroll={(e) => {
           const el = e.currentTarget;
           const i = Math.round(el.scrollLeft / el.clientWidth);
@@ -78,7 +78,7 @@ export function ProductGallery({ images, name }: { images: WCImage[]; name: stri
       </div>
 
       {images.length > 1 && (
-        <div className="no-scrollbar mt-4 flex gap-3 overflow-x-auto pb-1">
+        <div className="no-scrollbar relative mt-4 flex gap-3 overflow-x-auto pb-1">
           {images.map((im, i) => (
             <button
               key={im.id}
