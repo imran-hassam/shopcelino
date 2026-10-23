@@ -62,8 +62,8 @@ async function HomeContent() {
     <>
       {/* HERO — one full-width studio photo: model on the right, text on the left.
           The photo's white backdrop is multiplied into the brand cream so it reads as one image edge to edge. */}
-      <section className="relative isolate overflow-hidden bg-[color-mix(in_srgb,var(--secondary-color)_55%,var(--card-background))] text-heading lg:h-[clamp(560px,42vw,780px)]">
-        <div className="relative h-[440px] mix-blend-multiply [mask-image:linear-gradient(to_bottom,black_72%,transparent)] sm:h-[560px] lg:absolute lg:right-[2vw] lg:top-0 lg:aspect-square lg:h-auto lg:w-[min(58vw,1120px)] lg:[mask-image:linear-gradient(to_right,transparent,black_24%)]">
+      <section className="relative isolate flex flex-col overflow-hidden bg-[color-mix(in_srgb,var(--secondary-color)_55%,var(--card-background))] text-heading lg:block lg:h-[clamp(560px,42vw,780px)]">
+        <div className="relative order-2 h-[380px] mix-blend-multiply [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)] sm:h-[500px] lg:absolute lg:right-[2vw] lg:top-0 lg:aspect-square lg:h-auto lg:w-[min(58vw,1120px)] lg:[mask-image:linear-gradient(to_right,transparent,black_24%)]">
           <Image
             src={HERO_IMAGE.src}
             alt={HERO_IMAGE.alt}
@@ -76,8 +76,8 @@ async function HomeContent() {
           />
         </div>
 
-        <div className="relative px-5 pb-14 md:px-8 md:pb-16 lg:flex lg:h-full lg:items-center lg:pb-0 lg:pl-[clamp(4rem,15vw,18rem)] lg:pr-0">
-          <div className="max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(560px,38vw)]">
+        <div className="relative order-1 mx-auto w-full max-w-[1440px] px-4 pb-6 pt-10 md:px-8 md:pt-14 lg:flex lg:h-full lg:items-center lg:py-0">
+          <div className="max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(560px,40vw)]">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-primary-hover">Women · Men · Kids</p>
               {saleCount > 0 && (
