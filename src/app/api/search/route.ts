@@ -1,4 +1,4 @@
-import { getSkuIndexFast, matchSkus, normalizeTerm, type SkuEntry } from "@/lib/search";
+import { allWordsIds, getSkuIndexFast, matchSkus, normalizeTerm, type SkuEntry } from "@/lib/search";
 import { hiddenCategoryIds, storeGet } from "@/lib/woo";
 import { decodeEntities, formatMoney } from "@/lib/format";
 import type { WCPrices, WCProduct } from "@/lib/types";
@@ -22,13 +22,14 @@ export async function GET(req: Request) {
     const hidden = await hiddenCategoryIds();
     const notHidden = hidden.length ? { category: hidden.join(","), category_operator: "not_in" } : {};
 
-    const [text, index] = await Promise.all([
+    const [text, words, index] = await Promise.all([
       storeGet<Lite[]>("/products", { search: term, per_page: LIMIT, _fields: FIELDS, ...notHidden }).then((r) => r.data).catch(() => [] as Lite[]),
+      allWordsIds(term),
       getSkuIndexFast(2500),
     ]);
     const hits = index ? matchSkus(index, term) : [];
 
-    // Order: exact / starts-with SKU › title & description matches › other SKU matches.
+    // Order: exact / starts-with SKU › phrase matches › all-words matches › other SKU matches.
     type Slot = { id: number; variationId: number; sku?: string; inStock?: boolean };
     const slots: Slot[] = [];
     const seen = new Set<number>();
@@ -40,6 +41,7 @@ export async function GET(req: Request) {
     };
     hits.filter((h) => h.rank < 2).forEach((h) => push({ id: h.parentId, variationId: h.variationId, sku: h.sku, inStock: h.inStock }));
     text.forEach((p) => push({ id: p.id, variationId: 0 }));
+    words.forEach((id) => push({ id, variationId: 0 }));
     hits.filter((h) => h.rank === 2).forEach((h) => push({ id: h.parentId, variationId: h.variationId, sku: h.sku, inStock: h.inStock }));
 
     // Fetch details for SKU matches that weren't in the text results, plus matched variations.

@@ -162,17 +162,34 @@ export async function textSearchIds(term: string): Promise<number[]> {
 }
 
 /**
+ * For multi-word searches: products containing every word in any order
+ * (WooCommerce's own search only matches the words as one phrase).
+ */
+export async function allWordsIds(term: string): Promise<number[]> {
+  const words = [...new Set(term.toLowerCase().split(" ").filter((w) => w.length >= 2))].slice(0, 4);
+  if (words.length < 2) return [];
+  const lists = await Promise.all(words.map((w) => textSearchIds(w)));
+  const sets = lists.slice(1).map((l) => new Set(l));
+  return lists[0].filter((id) => sets.every((st) => st.has(id)));
+}
+
+/**
  * Ordered product ids for a search: exact / starts-with SKU matches first,
- * then text matches, then other SKU matches. Capped at 500.
+ * then exact-phrase text matches, then all-words matches, then other SKU matches. Capped at 500.
  */
 export async function searchProductIds(rawTerm: string) {
   const term = normalizeTerm(rawTerm);
   if (!term) return { ids: [] as number[], skuHits: [] as SkuHit[] };
-  const [text, index] = await Promise.all([textSearchIds(term), term.length >= 2 ? getSkuIndexFast(4000) : Promise.resolve(null)]);
+  const [text, words, index] = await Promise.all([
+    textSearchIds(term),
+    allWordsIds(term),
+    term.length >= 2 ? getSkuIndexFast(4000) : Promise.resolve(null),
+  ]);
   const skuHits = index ? matchSkus(index, term) : [];
   const ordered = [
     ...skuHits.filter((h) => h.rank < 2).map((h) => h.parentId),
     ...text,
+    ...words,
     ...skuHits.filter((h) => h.rank === 2).map((h) => h.parentId),
   ];
   return { ids: [...new Set(ordered)].slice(0, MAX_RESULTS), skuHits };
