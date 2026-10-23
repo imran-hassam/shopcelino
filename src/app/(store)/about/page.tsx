@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 /** Categories used for the photo collage and the wide banner (real store photos). */
-const PHOTO_CATEGORIES = ["womens-dresses", "womens-lingerie", "mens-formal-wear", "women-sleepwear"];
+const PHOTO_CATEGORIES = ["womens-dresses", "womens-lingerie", "mens-formal-wear"];
 
 export default function AboutPage() {
   return (
@@ -48,10 +48,11 @@ export default function AboutPage() {
 }
 
 async function AboutContent() {
-  const [all, sale, wpPage, ...photoLists] = await Promise.all([
+  const [all, sale, wpPage, featured, ...photoLists] = await Promise.all([
     getProducts({ perPage: 1 }),
     getProducts({ onSale: true, perPage: 1 }),
     getWpPage("about-us"),
+    getProducts({ category: "featured", perPage: 10 }),
     ...PHOTO_CATEGORIES.map((slug) => getProducts({ category: slug, perPage: 4, orderby: "popularity" })),
   ]);
 
@@ -62,7 +63,9 @@ async function AboutContent() {
     if (p) used.add(p.id);
     return p ?? null;
   });
-  const [c1, c2, c3, banner] = photos;
+  const [c1, c2, c3] = photos;
+  // Wide banner: four featured product photos side by side, each shown uncropped.
+  const banner = featured.products.filter((p) => p.images.length && !used.has(p.id)).slice(0, 4);
 
   // Show WordPress "About Us" text only if the page actually has words in it.
   const wpHtml = wpPage && stripHtml(wpPage.content.rendered).length > 80 ? sanitizeHtml(wpPage.content.rendered) : null;
@@ -141,19 +144,27 @@ async function AboutContent() {
       </section>
 
       {/* Wide image */}
-      {banner && (
+      {banner.length >= 2 && (
         <section className="mx-auto max-w-[1440px] px-5 pt-16 md:px-8 md:pt-20">
           <Reveal>
-            <Link href={`/product/${banner.slug}`} className="group block overflow-hidden rounded-2xl bg-card">
-              <img
-                src={banner.images[0].src}
-                srcSet={banner.images[0].srcset}
-                sizes="(min-width:1440px) 1376px, 100vw"
-                alt={banner.images[0].alt || decodeEntities(banner.name)}
-                loading="lazy"
-                className="aspect-[4/3] w-full object-cover object-[50%_22%] transition duration-[1.5s] group-hover:scale-[1.03] sm:aspect-[16/8] lg:aspect-[16/7]"
-              />
-            </Link>
+            <div className={`grid grid-cols-2 overflow-hidden rounded-2xl bg-card ${banner.length >= 4 ? "md:grid-cols-4" : ""}`}>
+              {banner.map((p, i) => (
+                <Link
+                  key={p.id}
+                  href={`/product/${p.slug}`}
+                  className={`group relative block overflow-hidden ${i >= 2 ? "hidden md:block" : ""}`}
+                >
+                  <img
+                    src={p.images[0].src}
+                    srcSet={p.images[0].srcset}
+                    sizes="(min-width:768px) 25vw, 50vw"
+                    alt={p.images[0].alt || decodeEntities(p.name)}
+                    loading="lazy"
+                    className="aspect-[3/4] w-full object-cover object-top transition duration-[1.2s] group-hover:scale-105"
+                  />
+                </Link>
+              ))}
+            </div>
           </Reveal>
         </section>
       )}
