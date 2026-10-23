@@ -52,8 +52,14 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
 
   const name = decodeEntities(product.name);
 
-  // Breadcrumb category: the product's first real category (skip merchandising tags like "Best Seller"), with its parents.
-  const primaryRef = product.categories.find((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug));
+  // Breadcrumb category (with its parents), ignoring merchandising tags like "Best Seller".
+  // Pick the most specific one (fewest products), skipping sale/deal groupings.
+  const primaryRef =
+    product.categories
+      .filter((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug) && !/sale|deal|limited/i.test(c.slug))
+      .map((c) => ({ ref: c, count: allCats.find((x) => x.id === c.id)?.count ?? Infinity }))
+      .sort((a, b) => a.count - b.count)[0]?.ref ??
+    product.categories.find((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug));
   const catChain: WCCategory[] = [];
   for (let c = primaryRef ? allCats.find((x) => x.id === primaryRef.id) ?? null : null; c; c = c.parent ? allCats.find((x) => x.id === c!.parent) ?? null : null) {
     catChain.unshift(c);
