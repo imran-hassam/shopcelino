@@ -61,7 +61,11 @@ async function fetchAllPages<T>(path: string, query: Record<string, string | num
 // Only one index build at a time per server instance.
 let building: Promise<{ index: SkuEntry[]; complete: boolean }> | null = null;
 
+// Last full index built or received on this server instance (survives between requests on the same instance).
+let local: { index: SkuEntry[]; at: number } | null = null;
+
 async function buildIndex() {
+  const t0 = Date.now();
   const hidden = await hiddenCategoryIds();
   const parentQuery: Record<string, string | number> = { per_page: 100, _fields: "id,sku,is_in_stock" };
   if (hidden.length) {
@@ -78,7 +82,10 @@ async function buildIndex() {
   const index: SkuEntry[] = [];
   for (const p of parents.items) if (p.sku) index.push([p.sku, p.id, 0, p.is_in_stock ? 1 : 0]);
   for (const v of variations.items) if (v.sku && live.has(v.parent)) index.push([v.sku, v.parent, v.id, v.is_in_stock ? 1 : 0]);
-  return { index, complete: parents.failed === 0 && variations.failed === 0 };
+  const complete = parents.failed === 0 && variations.failed === 0;
+  console.log(`SKU index built: ${index.length} entries in ${Math.round((Date.now() - t0) / 1000)}s${complete ? "" : " (incomplete)"}`);
+  if (complete) local = { index, at: Date.now() };
+  return { index, complete };
 }
 
 /** Every product + variation SKU in the shop. Shared across all server instances. */
@@ -109,9 +116,17 @@ export async function getSkuIndex(): Promise<SkuEntry[]> {
  * time it's built — the build keeps running in the background and fills the cache.
  */
 export async function getSkuIndexFast(ms = 3000): Promise<SkuEntry[] | null> {
-  const p = getSkuIndex();
+  const p = getSkuIndex().then((idx) => {
+    if (idx.length) local = { index: idx, at: Date.now() };
+    return idx;
+  });
   after(() => p.then(() => undefined, () => undefined));
-  return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
+  const got = await Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
+  if (got && got.length) return got;
+  // Shared cache not ready yet: use this instance's copy if it has one (refreshed within 12 h).
+  if (local && Date.now() - local.at < 12 * 3600 * 1000) return local.index;
+  console.log("SKU index not ready yet; text results only");
+  return got;
 }
 
 export type SkuHit = { parentId: number; variationId: number; sku: string; inStock: boolean; rank: number };
