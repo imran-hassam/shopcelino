@@ -69,7 +69,8 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
 
   // If WordPress didn't answer for something, try again in a few minutes instead of keeping the gap for hours.
   const complete = categories.length === 5 && categories.every((c) => c.image) && products.length === 3;
-  cacheLife(complete ? "hours" : "minutes");
+  if (complete) cacheLife("hours");
+  else cacheLife("minutes");
   return { categories, collections, products, feature };
 }
 
