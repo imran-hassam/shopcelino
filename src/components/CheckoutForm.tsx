@@ -258,7 +258,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
           </summary>
           <div className="mt-6">{summary()}</div>
         </details>
-        <div className="hidden lg:sticky lg:top-10 lg:block">
+        <div className="hidden lg:sticky lg:top-32 lg:block">
           <h2 className="mb-7 text-[26px]">Order summary</h2>
           {summary()}
         </div>

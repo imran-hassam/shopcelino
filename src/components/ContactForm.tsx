@@ -8,10 +8,12 @@ import { useState } from "react";
  */
 export function ContactForm({ to }: { to: string }) {
   const [sent, setSent] = useState(false);
-  const field = "w-full rounded-full border border-heading/25 bg-white px-5 py-3 text-[16px] outline-none transition placeholder:text-muted focus:border-heading";
+  const field =
+    "w-full rounded-lg border border-heading/20 bg-background px-4 py-3 text-[16px] outline-none transition placeholder:text-muted hover:border-heading/40 focus:border-primary-hover focus:bg-white";
+  const label = "mb-2 block text-[15px] font-medium";
   return (
     <form
-      className="rounded-2xl bg-accent p-6 md:p-8"
+      className="rounded-2xl border border-line bg-white p-6 shadow-sm sm:p-8"
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
@@ -20,25 +22,29 @@ export function ContactForm({ to }: { to: string }) {
         setSent(true);
       }}
     >
-      <div className="space-y-5">
-        <label className="block">
-          <span className="mb-2 block text-[17px]">Full name *</span>
+      <h2 className="font-sans text-[26px] font-semibold">Send us a message</h2>
+      <p className="mt-2 text-[15px] text-muted">Fields marked * are required.</p>
+
+      <div className="mt-7 grid gap-5 sm:grid-cols-2">
+        <label className="block sm:col-span-2">
+          <span className={label}>Full name *</span>
           <input name="name" required autoComplete="name" placeholder="Your name" className={field} />
         </label>
         <label className="block">
-          <span className="mb-2 block text-[17px]">Email *</span>
+          <span className={label}>Email *</span>
           <input name="email" type="email" required autoComplete="email" placeholder="you@example.com" className={field} />
         </label>
         <label className="block">
-          <span className="mb-2 block text-[17px]">Phone *</span>
+          <span className={label}>Phone *</span>
           <input name="phone" type="tel" required autoComplete="tel" placeholder="Phone" className={field} />
         </label>
-        <label className="block">
-          <span className="mb-2 block text-[17px]">Message *</span>
-          <textarea name="message" required rows={6} placeholder="Enter your message here..." className={`${field} rounded-2xl`} />
+        <label className="block sm:col-span-2">
+          <span className={label}>Message *</span>
+          <textarea name="message" required rows={6} placeholder="Enter your message here..." className={`${field} min-h-[150px] resize-y`} />
         </label>
       </div>
-      <button className="mt-7 rounded-full bg-heading px-14 py-4 text-[16px] font-bold text-white transition hover:bg-primary hover:text-heading">
+
+      <button className="mt-7 w-full rounded-full bg-heading px-12 py-3.5 text-[16px] font-bold text-white transition hover:bg-primary hover:text-heading sm:w-auto">
         Submit
       </button>
       {sent && <p className="mt-4 text-sm" role="status">Your email app should open with your message ready to send.</p>}

@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getAdjacentProducts, getAllCategories, getProductBySlug, getRelatedProducts, getVariations, getWpPage } from "@/lib/woo";
+import { getProductBySlug, getRelatedProducts, getVariations, getWpPage } from "@/lib/woo";
 import { decodeEntities, sanitizeHtml, stripHtml } from "@/lib/format";
-import { HIDDEN_CATEGORY_SLUGS, NON_FILTER_CATEGORY_SLUGS, SITE } from "@/lib/config";
-import type { WCCategory } from "@/lib/types";
-import { PageHero, PageHeroSkeleton } from "@/components/PageHero";
+import { SITE } from "@/lib/config";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductBuyBox } from "@/components/ProductBuyBox";
 import { Accordion } from "@/components/Accordion";
@@ -41,30 +37,15 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const [variations, adjacent, related, refundPage, shippingPage, allCats] = await Promise.all([
+  const [variations, related, refundPage, shippingPage] = await Promise.all([
     product.variations.length ? getVariations(product.slug, product.variations.map((v) => v.id)) : Promise.resolve([]),
-    getAdjacentProducts(product),
     getRelatedProducts(product),
     getWpPage("refund_returns"),
     getWpPage("shipping-policy"),
-    getAllCategories(),
   ]);
 
   const name = decodeEntities(product.name);
 
-  // Breadcrumb category (with its parents), ignoring merchandising tags like "Best Seller".
-  // Pick the most specific one (fewest products), skipping sale/deal groupings.
-  const primaryRef =
-    product.categories
-      .filter((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug) && !/sale|deal|limited/i.test(c.slug))
-      .map((c) => ({ ref: c, count: allCats.find((x) => x.id === c.id)?.count ?? Infinity }))
-      .sort((a, b) => a.count - b.count)[0]?.ref ??
-    product.categories.find((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug));
-  const catChain: WCCategory[] = [];
-  for (let c = primaryRef ? allCats.find((x) => x.id === primaryRef.id) ?? null : null; c; c = c.parent ? allCats.find((x) => x.id === c!.parent) ?? null : null) {
-    catChain.unshift(c);
-    if (catChain.length > 5) break;
-  }
   const summary = stripHtml(product.short_description);
   const jsonLd = {
     "@context": "https://schema.org",
@@ -99,33 +80,12 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
-      <PageHero
-        title={name}
-        clampTitle
-        crumbs={[
-          { label: "Shop", href: "/shop" },
-          ...catChain.map((c) => ({ label: decodeEntities(c.name), href: `/shop?category=${c.slug}` })),
-          { label: name },
-        ]}
-        aside={
-          <div className="flex items-center gap-3">
-            {adjacent.prev ? (
-              <Link href={`/product/${adjacent.prev.slug}`} className="flex items-center gap-1 hover:text-primary-hover"><ChevronLeft className="size-4" /> Previous</Link>
-            ) : <span className="flex items-center gap-1 text-muted"><ChevronLeft className="size-4" /> Previous</span>}
-            <span className="text-muted">|</span>
-            {adjacent.next ? (
-              <Link href={`/product/${adjacent.next.slug}`} className="flex items-center gap-1 hover:text-primary-hover">Next <ChevronRight className="size-4" /></Link>
-            ) : <span className="flex items-center gap-1 text-muted">Next <ChevronRight className="size-4" /></span>}
-          </div>
-        }
-      />
-
-      <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-10 md:px-8 md:pt-14">
+      <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-8 md:px-8 md:pt-12">
       <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
         <ProductGallery images={product.images} name={name} />
 
         <div className="lg:pt-2">
-          <h2 className="text-[32px] leading-tight md:text-[40px]">{name}</h2>
+          <h1 className="text-[32px] leading-tight md:text-[40px]">{name}</h1>
           <ProductBuyBox
             product={{
               id: product.id,
@@ -183,8 +143,7 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
 function ProductSkeleton() {
   return (
     <>
-    <PageHeroSkeleton />
-    <div className="mx-auto grid max-w-[1440px] animate-pulse gap-10 px-5 pb-20 pt-10 md:px-8 md:pt-14 lg:grid-cols-[1.15fr_1fr]">
+    <div className="mx-auto grid max-w-[1440px] animate-pulse gap-10 px-5 pb-20 pt-8 md:px-8 md:pt-12 lg:grid-cols-[1.15fr_1fr]">
       <div className="aspect-[4/5] rounded-2xl bg-card" />
       <div className="space-y-4">
         <div className="h-10 w-3/4 rounded bg-card" />
