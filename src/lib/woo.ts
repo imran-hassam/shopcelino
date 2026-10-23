@@ -29,10 +29,10 @@ function buildUrl(path: string, query: Query = {}) {
   return u.toString();
 }
 
-export async function storeGet<T>(path: string, query: Query = {}) {
+export async function storeGet<T>(path: string, query: Query = {}, timeoutMs = 15000) {
   const res = await fetch(buildUrl(STORE + path, query), {
     headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`Store API ${path} → ${res.status}`);
   const data = (await res.json()) as T;

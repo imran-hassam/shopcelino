@@ -7,6 +7,8 @@ import type { WCPrices, WCProduct } from "@/lib/types";
 export type Suggestion = { id: number; name: string; sku: string; price: string; image: string | null; href: string };
 
 const LIMIT = 10;
+// The first request after a deploy also builds the SKU index in the background (see lib/search.ts).
+export const maxDuration = 300;
 const FIELDS = "id,name,slug,sku,type,prices,images,variations";
 
 type Lite = Pick<WCProduct, "id" | "name" | "slug" | "sku" | "type" | "prices" | "images" | "variations">;

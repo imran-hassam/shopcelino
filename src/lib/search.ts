@@ -20,25 +20,65 @@ export function normalizeTerm(q: string) {
   return q.trim().replace(/\s+/g, " ").slice(0, 100);
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** One Store API page, with a generous timeout and up to 3 retries (the WordPress server can be slow). */
+async function getPage<T>(path: string, query: Record<string, string | number>) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await storeGet<T[]>(path, query, 40000);
+    } catch (e) {
+      if (attempt >= 3) throw e;
+      await sleep(1500 * (attempt + 1));
+    }
+  }
+}
+
+/** All pages of a listing, 3 at a time so WordPress isn't overloaded. Pages that still fail are counted. */
 async function fetchAllPages<T>(path: string, query: Record<string, string | number>) {
-  const first = await storeGet<T[]>(path, { ...query, page: 1 });
+  const first = await getPage<T>(path, { ...query, page: 1 });
   const pages = Math.min(first.totalPages || 1, 200);
   const out: T[] = [...first.data];
+  let failed = 0;
   const rest = Array.from({ length: pages - 1 }, (_, i) => i + 2);
-  // A few pages at a time, so the WordPress server isn't flooded.
-  for (let i = 0; i < rest.length; i += 6) {
+  for (let i = 0; i < rest.length; i += 3) {
     const batch = await Promise.all(
-      rest.slice(i, i + 6).map(async (page) => {
-        try {
-          return (await storeGet<T[]>(path, { ...query, page })).data;
-        } catch {
-          return (await storeGet<T[]>(path, { ...query, page })).data; // one retry
-        }
-      }),
+      rest.slice(i, i + 3).map((page) =>
+        getPage<T>(path, { ...query, page }).then(
+          (r) => r.data,
+          () => {
+            failed++;
+            return [] as T[];
+          },
+        ),
+      ),
     );
     batch.forEach((b) => out.push(...b));
   }
-  return out;
+  return { items: out, failed };
+}
+
+// Only one index build at a time per server instance.
+let building: Promise<{ index: SkuEntry[]; complete: boolean }> | null = null;
+
+async function buildIndex() {
+  const hidden = await hiddenCategoryIds();
+  const parentQuery: Record<string, string | number> = { per_page: 100, _fields: "id,sku,is_in_stock" };
+  if (hidden.length) {
+    parentQuery.category = hidden.join(",");
+    parentQuery.category_operator = "not_in";
+  }
+  const parents = await fetchAllPages<{ id: number; sku: string; is_in_stock: boolean }>("/products", parentQuery);
+  const variations = await fetchAllPages<{ id: number; parent: number; sku: string; is_in_stock: boolean }>("/products", {
+    type: "variation",
+    per_page: 100,
+    _fields: "id,parent,sku,is_in_stock",
+  });
+  const live = new Set(parents.items.map((p) => p.id));
+  const index: SkuEntry[] = [];
+  for (const p of parents.items) if (p.sku) index.push([p.sku, p.id, 0, p.is_in_stock ? 1 : 0]);
+  for (const v of variations.items) if (v.sku && live.has(v.parent)) index.push([v.sku, v.parent, v.id, v.is_in_stock ? 1 : 0]);
+  return { index, complete: parents.failed === 0 && variations.failed === 0 };
 }
 
 /** Every product + variation SKU in the shop. Shared across all server instances. */
@@ -46,26 +86,16 @@ export async function getSkuIndex(): Promise<SkuEntry[]> {
   "use cache: remote";
   cacheTag("products", "sku-index");
   try {
-    const hidden = await hiddenCategoryIds();
-    const parentQuery: Record<string, string | number> = { per_page: 100, _fields: "id,sku,is_in_stock" };
-    if (hidden.length) {
-      parentQuery.category = hidden.join(",");
-      parentQuery.category_operator = "not_in";
+    building ??= buildIndex().finally(() => (building = null));
+    const { index, complete } = await building;
+    if (complete) {
+      // Serve for 5 min, refresh in the background every 6 h; WooCommerce webhooks can refresh sooner.
+      cacheLife({ stale: 300, revalidate: 6 * 3600, expire: 7 * 86400 });
+    } else {
+      // Some pages failed: use what we have, but try again soon.
+      console.error(`SKU index incomplete (${index.length} entries)`);
+      cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
     }
-    const [parents, variations] = await Promise.all([
-      fetchAllPages<{ id: number; sku: string; is_in_stock: boolean }>("/products", parentQuery),
-      fetchAllPages<{ id: number; parent: number; sku: string; is_in_stock: boolean }>("/products", {
-        type: "variation",
-        per_page: 100,
-        _fields: "id,parent,sku,is_in_stock",
-      }),
-    ]);
-    const live = new Set(parents.map((p) => p.id));
-    const index: SkuEntry[] = [];
-    for (const p of parents) if (p.sku) index.push([p.sku, p.id, 0, p.is_in_stock ? 1 : 0]);
-    for (const v of variations) if (v.sku && live.has(v.parent)) index.push([v.sku, v.parent, v.id, v.is_in_stock ? 1 : 0]);
-    // Serve for 5 min, refresh in the background every 6 h; WooCommerce webhooks can refresh sooner.
-    cacheLife({ stale: 300, revalidate: 6 * 3600, expire: 7 * 86400 });
     return index;
   } catch (e) {
     console.error("SKU index failed", e);
