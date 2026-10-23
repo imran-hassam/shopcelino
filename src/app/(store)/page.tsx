@@ -12,6 +12,12 @@ import { Carousel } from "@/components/Carousel";
 import { Tabs } from "@/components/Tabs";
 import { Reveal } from "@/components/Reveal";
 
+/** Hero photo: a real Shop Celino model shot (from the store's own product photography, white studio backdrop). */
+const HERO_IMAGE = {
+  src: "https://shopcelino.com/wp-content/uploads/2026/09/CEWM0163.jpg",
+  alt: "Model wearing a yellow off-the-shoulder blouse from Shop Celino",
+};
+
 export default function Home() {
   return (
     <Suspense fallback={<HomeSkeleton />}>
@@ -23,7 +29,7 @@ export default function Home() {
 function HomeSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="min-h-[600px] bg-footer md:min-h-[680px] lg:min-h-[min(78vh,720px)]" />
+      <div className="h-[640px] bg-[color-mix(in_srgb,var(--secondary-color)_55%,var(--card-background))] sm:h-[760px] lg:h-[clamp(560px,42vw,780px)]" />
       <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-5 px-5 py-20 md:grid-cols-4 md:px-8">
         {Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[3/4] rounded-xl bg-card" />)}
       </div>
@@ -51,57 +57,54 @@ async function HomeContent() {
   ]);
 
   const saleCount = sale.total;
-  // Hero collage: three real product photos from different categories (women, men, kids…).
-  const heroPool = [
-    ...["womens-dresses", "mens-formal-wear", "kids", "women-sleepwear", "womens-lingerie"].map(
-      (slug) => catTiles.find((c) => c.slug === slug)?.product,
-    ),
-    ...hero.products,
-    ...(tabData[0]?.products ?? []),
-  ];
-  const collage: WCProduct[] = [];
-  for (const p of heroPool) {
-    if (p?.images.length && collage.length < 3 && !collage.some((x) => x.id === p.id || x.images[0].src === p.images[0].src)) collage.push(p);
-  }
 
   return (
     <>
-      {/* HERO — text on the left, a collage of real product photos on the right */}
-      <section className="relative isolate overflow-hidden bg-footer text-footer-text">
-        {/* Soft brand-gold glow behind the collage */}
-        <div aria-hidden className="pointer-events-none absolute -right-40 top-1/2 -z-10 size-[720px] -translate-y-1/2 rounded-full bg-primary/15 blur-3xl" />
+      {/* HERO — one full-width studio photo: model on the right, text on the left.
+          The photo's white backdrop is multiplied into the brand cream so it reads as one image edge to edge. */}
+      <section className="relative isolate overflow-hidden bg-[color-mix(in_srgb,var(--secondary-color)_55%,var(--card-background))] text-heading lg:h-[clamp(560px,42vw,780px)]">
+        <div className="relative h-[440px] mix-blend-multiply [mask-image:linear-gradient(to_bottom,black_72%,transparent)] sm:h-[560px] lg:absolute lg:right-[2vw] lg:top-0 lg:aspect-square lg:h-auto lg:w-[min(58vw,1120px)] lg:[mask-image:linear-gradient(to_right,transparent,black_24%)]">
+          <Image
+            src={HERO_IMAGE.src}
+            alt={HERO_IMAGE.alt}
+            fill
+            sizes="(min-width:1024px) 58vw, 100vw"
+            quality={80}
+            fetchPriority="high"
+            loading="eager"
+            className="object-cover object-[50%_0%]"
+          />
+        </div>
 
-        <div className="relative mx-auto grid max-w-[1440px] items-center gap-12 px-5 py-14 md:px-8 md:py-16 lg:min-h-[min(78vh,720px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16 lg:px-16 lg:py-20">
-          <div className="order-2 max-w-[560px] animate-[fadein_.9s_ease] lg:order-1">
+        <div className="relative px-5 pb-14 md:px-8 md:pb-16 lg:flex lg:h-full lg:items-center lg:pb-0 lg:pl-[clamp(4rem,15vw,18rem)] lg:pr-0">
+          <div className="max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(560px,38vw)]">
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-secondary">Women · Men · Kids</p>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-primary-hover">Women · Men · Kids</p>
               {saleCount > 0 && (
-                <Link href="/shop?sale=1" className="rounded-full border border-secondary/60 px-3 py-0.5 text-[13px] text-secondary transition hover:bg-secondary hover:text-heading">
+                <Link href="/shop?sale=1" className="rounded-full border border-primary-hover/50 px-3 py-0.5 text-[13px] text-primary-hover transition hover:bg-heading hover:text-white">
                   Sale on now
                 </Link>
               )}
             </div>
-            <h1 className="mt-5 text-[42px] leading-[1.08] !text-footer-text sm:text-[54px] xl:text-[68px]">{SITE.tagline}</h1>
-            <p className="mt-6 max-w-md text-[17px] leading-relaxed tracking-wide text-footer-text/85">
+            <h1 className="mt-5 text-[38px] leading-[1.15] sm:text-[48px] lg:text-[44px] xl:text-[56px] 2xl:text-[62px]">{SITE.tagline}</h1>
+            <p className="mt-6 max-w-md text-[16px] leading-relaxed tracking-wide text-heading/80">
               Dresses, lingerie, sleepwear, men&apos;s tailoring and kids&apos; wear — all in one place.
             </p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
+            <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link
                 href="/shop"
-                className="inline-flex items-center gap-2 rounded-sm bg-white px-8 py-3.5 text-[14px] font-semibold uppercase tracking-[0.12em] text-heading transition hover:bg-primary"
+                className="inline-flex items-center bg-heading px-8 py-4 text-[14px] font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-primary hover:text-heading"
               >
                 Shop Now
               </Link>
               <Link
                 href="/shop?category=new-arrival"
-                className="group inline-flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.12em] text-footer-text/90 hover:text-secondary"
+                className="group inline-flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.12em] text-heading/85 hover:text-primary-hover"
               >
                 New Arrivals <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </div>
-
-          {collage.length > 0 && <HeroCollage products={collage} />}
         </div>
       </section>
 
@@ -217,41 +220,5 @@ async function HomeContent() {
         </section>
       )}
     </>
-  );
-}
-
-/** Hero artwork: real product photos arranged as an editorial collage (one large, two staggered). */
-function HeroCollage({ products }: { products: WCProduct[] }) {
-  const [big, ...small] = products;
-  const tile = (p: WCProduct, sizes: string, priority: boolean, cls: string) => (
-    <Link
-      key={p.id}
-      href={`/product/${p.slug}`}
-      className={`group relative block overflow-hidden rounded-sm bg-card shadow-2xl shadow-black/40 ring-1 ring-secondary/30 ${cls}`}
-    >
-      <Image
-        src={p.images[0].src}
-        alt={p.images[0].alt || decodeEntities(p.name)}
-        fill
-        sizes={sizes}
-        quality={80}
-        {...(priority ? { fetchPriority: "high" as const, loading: "eager" as const } : {})}
-        className="object-cover object-top transition duration-700 group-hover:scale-105"
-      />
-      <span className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-footer/90 to-transparent px-4 pb-3 pt-8 text-[13px] leading-snug text-footer-text transition duration-300 group-hover:translate-y-0 group-focus-visible:translate-y-0">
-        <span className="line-clamp-2">{decodeEntities(p.name)}</span>
-      </span>
-    </Link>
-  );
-  return (
-    <div className="order-1 animate-[fadein_1.1s_ease] lg:order-2">
-      <div className="relative mx-auto grid max-w-[640px] grid-cols-[1.25fr_1fr] gap-4 sm:gap-5">
-        {/* Thin gold frame offset behind the large photo */}
-        <div aria-hidden className="absolute -left-3 -top-3 hidden h-[78%] w-[52%] border border-primary/60 sm:block" />
-        {tile(big, "(min-width:1024px) 30vw, 55vw", true, "row-span-2 min-h-[300px]")}
-        {small[0] && tile(small[0], "(min-width:1024px) 22vw, 45vw", true, "aspect-square lg:translate-y-8")}
-        {small[1] && tile(small[1], "(min-width:1024px) 22vw, 45vw", false, "aspect-square lg:translate-y-8")}
-      </div>
-    </div>
   );
 }
