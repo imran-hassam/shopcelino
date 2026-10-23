@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRight } from "lucide-react";
@@ -22,7 +23,7 @@ export default function Home() {
 function HomeSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="h-[560px] bg-secondary/45" />
+      <div className="min-h-[600px] bg-footer md:min-h-[min(78vh,720px)]" />
       <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-5 px-5 py-20 md:grid-cols-4 md:px-8">
         {Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[3/4] rounded-xl bg-card" />)}
       </div>
@@ -59,13 +60,15 @@ async function HomeContent() {
       <section className="relative isolate overflow-hidden bg-footer text-footer-text">
         {heroMain && (
           <div className="absolute inset-0 md:left-auto md:w-[64%]">
-            <img
+            <Image
               src={heroMain.images[0].src}
-              srcSet={heroMain.images[0].srcset}
-              sizes="(min-width:768px) 64vw, 100vw"
               alt={heroMain.images[0].alt || decodeEntities(heroMain.name)}
+              fill
+              sizes="(min-width:768px) 64vw, 100vw"
+              quality={80}
               fetchPriority="high"
-              className="size-full animate-[heroZoom_18s_ease-out_both] object-cover object-[50%_22%]"
+              loading="eager"
+              className="animate-[heroZoom_18s_ease-out_both] object-cover object-[50%_22%]"
             />
             {/* Blend the photo into the brown panel (left on desktop, bottom on mobile) */}
             <div className="absolute inset-0 bg-gradient-to-t from-footer via-footer/60 to-footer/10 md:bg-gradient-to-r md:from-footer md:via-footer/35 md:to-transparent" />
