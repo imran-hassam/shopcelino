@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Heart, Menu, ShoppingBag, User, X } from "lucide-react";
 import { MENU_CATEGORIES } from "@/lib/config";
 import { useStore } from "./StoreProvider";
@@ -18,13 +18,23 @@ const NAV = [
   { href: "/contact", label: "Contact Us" },
 ];
 
-export function Header({ logoUrl, accountUrl, mega }: { logoUrl: string; accountUrl: string; mega?: MegaMenuData | null }) {
+export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: string }) {
   const { cartCount, wishlist } = useStore();
   const [open, setOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   // Mega menu content mounts on first hover/focus (keeps its images off the initial page load).
-  const [megaReady, setMegaReady] = useState(false);
+  const [mega, setMega] = useState<MegaMenuData | null>(null);
+  const megaLoading = useRef(false);
+  function loadMega() {
+    if (mega || megaLoading.current) return;
+    megaLoading.current = true;
+    fetch("/api/mega")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: MegaMenuData | null) => d && setMega(d))
+      .catch(() => undefined)
+      .finally(() => (megaLoading.current = false));
+  }
   // Hide right after a click inside it, until the pointer leaves the Shop item.
   const [megaHidden, setMegaHidden] = useState(false);
 
@@ -66,10 +76,10 @@ export function Header({ logoUrl, accountUrl, mega }: { logoUrl: string; account
                 key={item.href}
                 className="group flex self-stretch"
                 onMouseEnter={() => {
-                  setMegaReady(true);
+                  loadMega();
                   setMegaHidden(false);
                 }}
-                onFocus={() => setMegaReady(true)}
+                onFocus={loadMega}
                 onMouseLeave={() => setMegaHidden(false)}
               >
                 <NavLink
@@ -88,7 +98,7 @@ export function Header({ logoUrl, accountUrl, mega }: { logoUrl: string; account
                       : "group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
                   }`}
                 >
-                  {mega && megaReady ? (
+                  {mega ? (
                     <MegaMenu
                       data={mega}
                       onNavigate={() => {
