@@ -177,3 +177,72 @@ export async function searchProductIds(rawTerm: string) {
   ];
   return { ids: [...new Set(ordered)].slice(0, MAX_RESULTS), skuHits };
 }
+
+export type SearchFilters = {
+  categoryId?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  onSale?: boolean;
+  inStock?: boolean;
+  sort: "featured" | "newest" | "price-asc" | "price-desc" | "popular" | "name";
+};
+
+/**
+ * Apply shop filters and sorting to a search's product ids. WordPress can't take
+ * hundreds of ids in one request, so this asks in batches of 50 and returns ids only.
+ * "featured" keeps search relevance order; "popular" keeps relevance too (WooCommerce
+ * doesn't expose sales counts); "newest" uses product id order (WordPress ids grow over time).
+ */
+export async function filterSearchIds(ids: number[], f: SearchFilters): Promise<number[]> {
+  "use cache";
+  cacheTag("products");
+  const noFilters = !f.categoryId && f.minPrice === undefined && f.maxPrice === undefined && !f.onSale && !f.inStock;
+  if (!ids.length || (noFilters && (f.sort === "featured" || f.sort === "popular"))) {
+    cacheLife("hours");
+    return ids;
+  }
+  if (noFilters && f.sort === "newest") {
+    cacheLife("hours");
+    return [...ids].sort((a, b) => b - a);
+  }
+  try {
+    type Row = { id: number; name: string; prices: { price: string } };
+    const chunks: number[][] = [];
+    for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i, i + 50));
+    const rows: Row[] = [];
+    for (let i = 0; i < chunks.length; i += 3) {
+      const got = await Promise.all(
+        chunks.slice(i, i + 3).map((chunk) =>
+          storeGet<Row[]>("/products", {
+            include: chunk.join(","),
+            per_page: 100,
+            _fields: "id,name,prices",
+            category: f.categoryId ? String(f.categoryId) : undefined,
+            min_price: f.minPrice !== undefined ? f.minPrice * 100 : undefined,
+            max_price: f.maxPrice !== undefined ? f.maxPrice * 100 : undefined,
+            on_sale: f.onSale ? true : undefined,
+            stock_status: f.inStock ? ["instock"] : undefined,
+          }).then((r) => r.data),
+        ),
+      );
+      got.forEach((g) => rows.push(...g));
+    }
+    const pos = new Map(ids.map((id, i) => [id, i]));
+    const price = (r: Row) => Number(r.prices?.price ?? 0);
+    const sorters: Record<SearchFilters["sort"], (a: Row, b: Row) => number> = {
+      featured: (a, b) => pos.get(a.id)! - pos.get(b.id)!,
+      popular: (a, b) => pos.get(a.id)! - pos.get(b.id)!,
+      newest: (a, b) => b.id - a.id,
+      "price-asc": (a, b) => price(a) - price(b),
+      "price-desc": (a, b) => price(b) - price(a),
+      name: (a, b) => a.name.localeCompare(b.name),
+    };
+    rows.sort(sorters[f.sort]);
+    cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+    return rows.map((r) => r.id);
+  } catch (e) {
+    console.error(e);
+    cacheLife("seconds");
+    return [];
+  }
+}

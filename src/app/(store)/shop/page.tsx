@@ -7,7 +7,7 @@ import { decodeEntities, stripHtml } from "@/lib/format";
 import { ProductCard } from "@/components/ProductCard";
 import { ShopFilters } from "@/components/ShopFilters";
 import { PageHero, PageHeroSkeleton, type Crumb } from "@/components/PageHero";
-import { searchProductIds } from "@/lib/search";
+import { filterSearchIds, searchProductIds, type SearchFilters } from "@/lib/search";
 import { SortSelect } from "@/components/SortSelect";
 
 type SP = Record<string, string | string[] | undefined>;
@@ -56,20 +56,35 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
   // Search: product ids matching title, descriptions or any product/variation SKU (best first).
   const found = q.trim() ? await searchProductIds(q) : null;
 
-  const [cats, cat, result] = await Promise.all([
-    getAllCategories(),
-    category ? getCategory(category) : Promise.resolve(null),
-    getProducts({
-      category: category || undefined,
-      include: found ? found.ids : undefined,
-      page,
-      ...(found && sort === "featured" ? { orderby: "include" as const, order: "asc" as const } : SORTS[sort]),
-      minPrice: Number.isFinite(min) ? min : undefined,
-      maxPrice: Number.isFinite(max) ? max : undefined,
+  const [cats, cat] = await Promise.all([getAllCategories(), category ? getCategory(category) : Promise.resolve(null)]);
+  const priceMin = Number.isFinite(min) ? min : undefined;
+  const priceMax = Number.isFinite(max) ? max : undefined;
+
+  let result: Awaited<ReturnType<typeof getProducts>>;
+  if (found) {
+    // Search: filter/sort the matching ids, then load just this page's products.
+    const ids = category && !cat ? [] : await filterSearchIds(found.ids, {
+      categoryId: cat?.id,
+      minPrice: priceMin,
+      maxPrice: priceMax,
       onSale,
       inStock,
-    }),
-  ]);
+      sort: sort as SearchFilters["sort"],
+    });
+    const slice = ids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const list = await getProducts({ include: slice, orderby: "include", order: "asc", perPage: PAGE_SIZE });
+    result = { products: list.products, total: ids.length, totalPages: Math.ceil(ids.length / PAGE_SIZE) };
+  } else {
+    result = await getProducts({
+      category: category || undefined,
+      page,
+      ...SORTS[sort],
+      minPrice: priceMin,
+      maxPrice: priceMax,
+      onSale,
+      inStock,
+    });
+  }
 
   const filterCats = cats
     .filter((c) => c.count > 0 && !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug))
