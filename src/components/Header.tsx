@@ -47,7 +47,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
   const [salesPinned, setSalesPinned] = useState(false);
   const [salesDrawer, setSalesDrawer] = useState(false);
   const salesRef = useRef<HTMLDivElement>(null);
-  const salesBtn = useRef<HTMLButtonElement>(null);
+  const salesBtn = useRef<HTMLAnchorElement>(null);
   const salesShown = salesHover || salesPinned;
   function loadSales() {
     if (sales || salesLoading.current) return;
@@ -172,15 +172,13 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                 }}
                 onMouseLeave={() => setSalesHover(false)}
               >
-                <button
+                {/* Click opens the Today's Sales page; hover (or ↓ key) shows the menu. */}
+                <Link
                   ref={salesBtn}
-                  type="button"
+                  href={item.href}
                   aria-expanded={salesShown}
                   aria-controls="sales-menu"
-                  onClick={() => {
-                    loadSales();
-                    setSalesPinned((p) => !p);
-                  }}
+                  onClick={closeSales}
                   onKeyDown={(e) => {
                     if (e.key === "ArrowDown") {
                       e.preventDefault();
@@ -192,7 +190,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                 >
                   {item.label}
                   <ChevronDown className={`size-4 transition-transform ${salesShown ? "rotate-180" : ""}`} strokeWidth={1.5} />
-                </button>
+                </Link>
                 <div
                   id="sales-menu"
                   className={`absolute inset-x-0 top-full border-t border-line shadow-[0_24px_40px_-20px_rgba(34,32,29,.35)] transition-all duration-200 ${
@@ -282,16 +280,20 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
               ))}
             </div>
           )}
-          <button
-            className="flex w-full items-center justify-between border-b border-line py-3.5"
-            onClick={() => {
-              loadSales();
-              setSalesDrawer((s) => !s);
-            }}
-            aria-expanded={salesDrawer}
-          >
-            Today&apos;s Sales <ChevronDown className={`size-5 transition-transform ${salesDrawer ? "rotate-180" : ""}`} strokeWidth={1.5} />
-          </button>
+          <div className="flex items-center justify-between border-b border-line">
+            <Link href="/todays-sales" className="flex-1 py-3.5">Today&apos;s Sales</Link>
+            <button
+              className="-mr-2 p-2"
+              aria-label="Show Today's Sales menu"
+              onClick={() => {
+                loadSales();
+                setSalesDrawer((s) => !s);
+              }}
+              aria-expanded={salesDrawer}
+            >
+              <ChevronDown className={`size-5 transition-transform ${salesDrawer ? "rotate-180" : ""}`} strokeWidth={1.5} />
+            </button>
+          </div>
           {salesDrawer && (
             <div className="border-b border-line">
               <SalesMenuCompact data={sales} onNavigate={() => setOpen(false)} />

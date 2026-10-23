@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { StoreProvider } from "@/components/StoreProvider";
 import { SITE } from "@/lib/config";
+import { LOGO_URL } from "@/lib/site-urls";
 import { display, sans } from "./fonts";
 import "./globals.css";
 
@@ -8,6 +9,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: `${SITE.name} — Women's, Men's & Kids' Fashion`, template: `%s | ${SITE.name}` },
   description: SITE.tagline,
+  // Browser tab icon: the Shop Celino logo from the WordPress media library.
+  icons: { icon: LOGO_URL, shortcut: LOGO_URL, apple: LOGO_URL },
   openGraph: { siteName: SITE.name, type: "website" },
   // Keep the preview out of Google until the domain switch is approved.
   robots: { index: process.env.ALLOW_INDEXING === "true", follow: process.env.ALLOW_INDEXING === "true" },
