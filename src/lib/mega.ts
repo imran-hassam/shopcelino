@@ -95,3 +95,45 @@ async function getLatestPost(): Promise<{ title: string; link: string } | null> 
     return null;
   }
 }
+
+/** Data for the "Today's Sales" mega menu — real WooCommerce categories and sale products. */
+export type SalesMenuData = {
+  categories: { slug: string; name: string; image: string | null }[];
+  products: { slug: string; name: string; image: string | null; price: string; regular: string | null }[];
+};
+
+export async function getSalesMenu(): Promise<SalesMenuData> {
+  "use cache";
+  cacheTag("products", "categories", "sales-menu");
+  const cats = await getAllCategories();
+  const bySlug = new Map(cats.map((c) => [c.slug, c]));
+  const shopBy = MENU_CATEGORIES.map((m) => bySlug.get(m.slug)).filter((c) => c && c.count > 0).slice(0, 8) as typeof cats;
+
+  const [lists, sale] = await Promise.all([
+    Promise.all(shopBy.map((c) => (c.image ? Promise.resolve(null) : getProducts({ category: c.slug, perPage: 6, orderby: "popularity" })))),
+    // Newest products that are on sale right now.
+    getProducts({ onSale: true, orderby: "date", order: "desc", perPage: 6 }),
+  ]);
+
+  const categories = shopBy.map((c, i) => ({
+    slug: c.slug,
+    name: decodeEntities(c.name),
+    image: c.image?.thumbnail ?? lists[i]?.products.find((p) => p.images.length)?.images[0]?.thumbnail ?? null,
+  }));
+
+  const products = sale.products.map((p) => {
+    const r = p.prices.price_range;
+    const range = r && r.min_amount !== r.max_amount;
+    return {
+      slug: p.slug,
+      name: decodeEntities(p.name),
+      image: p.images[0]?.thumbnail ?? null,
+      price: range ? `${formatMoney(r!.min_amount, p.prices)} – ${formatMoney(r!.max_amount, p.prices)}` : formatMoney(p.prices.price, p.prices),
+      regular: !range && p.prices.regular_price !== p.prices.price ? formatMoney(p.prices.regular_price, p.prices) : null,
+    };
+  });
+
+  if (categories.length === 8 && categories.every((c) => c.image) && products.length === 6) cacheLife("hours");
+  else cacheLife("minutes");
+  return { categories, products };
+}

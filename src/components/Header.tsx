@@ -9,11 +9,13 @@ import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
 import { SearchBox } from "./SearchBox";
 import { MegaMenu } from "./MegaMenu";
-import type { MegaMenuData } from "@/lib/mega";
+import type { MegaMenuData, SalesMenuData } from "@/lib/mega";
+import { SalesMenu, SalesMenuCompact } from "./SalesMenu";
 
-const NAV = [
+const NAV: { href: string; label: string; dropdown?: boolean; sales?: boolean }[] = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop", dropdown: true },
+  { href: "/todays-sales", label: "Today's Sales", sales: true },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact Us" },
 ];
@@ -37,6 +39,47 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
   }
   // Hide right after a click inside it, until the pointer leaves the Shop item.
   const [megaHidden, setMegaHidden] = useState(false);
+
+  // "Today's Sales" mega menu: opens on hover or click (touch), closes on Escape / outside click.
+  const [sales, setSales] = useState<SalesMenuData | null>(null);
+  const salesLoading = useRef(false);
+  const [salesHover, setSalesHover] = useState(false);
+  const [salesPinned, setSalesPinned] = useState(false);
+  const [salesDrawer, setSalesDrawer] = useState(false);
+  const salesRef = useRef<HTMLDivElement>(null);
+  const salesBtn = useRef<HTMLButtonElement>(null);
+  const salesShown = salesHover || salesPinned;
+  function loadSales() {
+    if (sales || salesLoading.current) return;
+    salesLoading.current = true;
+    fetch("/api/sales-menu")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: SalesMenuData | null) => d && setSales(d))
+      .catch(() => undefined)
+      .finally(() => (salesLoading.current = false));
+  }
+  function closeSales() {
+    setSalesHover(false);
+    setSalesPinned(false);
+  }
+  useEffect(() => {
+    if (!salesShown) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeSales();
+        salesBtn.current?.focus();
+      }
+    };
+    const onDown = (e: MouseEvent) => {
+      if (salesRef.current && !salesRef.current.contains(e.target as Node)) closeSales();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [salesShown]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -118,6 +161,53 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                   )}
                 </div>
               </div>
+            ) : item.sales ? (
+              <div
+                key={item.href}
+                ref={salesRef}
+                className="flex self-stretch"
+                onMouseEnter={() => {
+                  loadSales();
+                  setSalesHover(true);
+                }}
+                onMouseLeave={() => setSalesHover(false)}
+              >
+                <button
+                  ref={salesBtn}
+                  type="button"
+                  aria-expanded={salesShown}
+                  aria-controls="sales-menu"
+                  onClick={() => {
+                    loadSales();
+                    setSalesPinned((p) => !p);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      loadSales();
+                      setSalesPinned(true);
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 text-[17px] transition-colors hover:text-primary-hover ${salesShown ? "text-primary-hover" : ""}`}
+                >
+                  {item.label}
+                  <ChevronDown className={`size-4 transition-transform ${salesShown ? "rotate-180" : ""}`} strokeWidth={1.5} />
+                </button>
+                <div
+                  id="sales-menu"
+                  className={`absolute inset-x-0 top-full border-t border-line shadow-[0_24px_40px_-20px_rgba(34,32,29,.35)] transition-all duration-200 ${
+                    salesShown ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"
+                  }`}
+                >
+                  <SalesMenu
+                    data={sales}
+                    onNavigate={() => {
+                      closeSales();
+                      (document.activeElement as HTMLElement | null)?.blur();
+                    }}
+                  />
+                </div>
+              </div>
             ) : (
               <NavLink
                 key={item.href}
@@ -190,6 +280,21 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                   {c.label}
                 </Link>
               ))}
+            </div>
+          )}
+          <button
+            className="flex w-full items-center justify-between border-b border-line py-3.5"
+            onClick={() => {
+              loadSales();
+              setSalesDrawer((s) => !s);
+            }}
+            aria-expanded={salesDrawer}
+          >
+            Today&apos;s Sales <ChevronDown className={`size-5 transition-transform ${salesDrawer ? "rotate-180" : ""}`} strokeWidth={1.5} />
+          </button>
+          {salesDrawer && (
+            <div className="border-b border-line">
+              <SalesMenuCompact data={sales} onNavigate={() => setOpen(false)} />
             </div>
           )}
           <Link href="/about" className="block border-b border-line py-3.5">About Us</Link>
