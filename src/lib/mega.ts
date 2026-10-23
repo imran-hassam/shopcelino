@@ -54,7 +54,12 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
     }
   }
   // Top up from Featured if a category had nothing suitable.
-  for (const p of featured.products) if (picks.length < 3 && p.images.length && !used.has(p.id)) picks.push(p), used.add(p.id);
+  for (const p of featured.products) {
+    if (picks.length < 3 && p.images.length && !used.has(p.id)) {
+      picks.push(p);
+      used.add(p.id);
+    }
+  }
   const products = picks.slice(0, 3).map((p) => {
     const r = p.prices.price_range;
     return {

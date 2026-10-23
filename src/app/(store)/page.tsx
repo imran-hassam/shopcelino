@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowRight, ArrowUpRight, ShoppingBag } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { getCategory, getProducts } from "@/lib/woo";
 import { HOME_LOOKS, HOME_TABS, MENU_CATEGORIES, SITE } from "@/lib/config";
 import { decodeEntities } from "@/lib/format";
@@ -10,8 +10,6 @@ import { ProductCard } from "@/components/ProductCard";
 import { Carousel } from "@/components/Carousel";
 import { Tabs } from "@/components/Tabs";
 import { Reveal } from "@/components/Reveal";
-import { Price } from "@/components/Price";
-import { Stars } from "@/components/Stars";
 
 export default function Home() {
   return (
@@ -54,73 +52,55 @@ async function HomeContent() {
   const saleCount = sale.total;
   const heroProducts = hero.products.length ? hero.products : tabData[0]?.products ?? [];
   const heroMain = heroProducts.find((p) => p.images.length) ?? null;
-  const others = heroProducts.filter((p) => p.id !== heroMain?.id && p.images.length);
-  const heroCard = others.find((p) => p.on_sale) ?? others[0] ?? null;
 
   return (
     <>
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-secondary/80 via-secondary/30 to-background">
-        {/* Large faded brand word behind the hero */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-4 select-none text-center font-display text-[26vw] leading-none text-heading/[0.05] lg:top-6 lg:text-[19vw] 2xl:text-[280px]"
-        >
-          Celino
-        </span>
+      {/* HERO — full-width photo on the right, text on the left */}
+      <section className="relative isolate overflow-hidden bg-footer text-footer-text">
+        {heroMain && (
+          <div className="absolute inset-0 md:left-auto md:w-[64%]">
+            <img
+              src={heroMain.images[0].src}
+              srcSet={heroMain.images[0].srcset}
+              sizes="(min-width:768px) 64vw, 100vw"
+              alt={heroMain.images[0].alt || decodeEntities(heroMain.name)}
+              fetchPriority="high"
+              className="size-full animate-[heroZoom_18s_ease-out_both] object-cover object-[50%_22%]"
+            />
+            {/* Blend the photo into the brown panel (left on desktop, bottom on mobile) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-footer via-footer/60 to-footer/10 md:bg-gradient-to-r md:from-footer md:via-footer/35 md:to-transparent" />
+          </div>
+        )}
 
-        <div className="relative mx-auto grid max-w-[1440px] gap-8 px-5 pb-12 pt-10 md:grid-cols-2 md:px-8 lg:min-h-[660px] lg:grid-cols-[1.15fr_1fr_0.8fr] lg:items-end lg:gap-6 lg:pb-0 lg:pt-0">
-          {/* Left: headline */}
-          <div className="relative z-10 animate-[fadein_.9s_ease] md:col-span-2 lg:col-span-1 lg:self-center lg:pb-10 lg:pt-28">
+        <div className="relative mx-auto flex min-h-[600px] max-w-[1440px] items-end px-5 pb-14 pt-56 md:min-h-[min(78vh,720px)] md:items-center md:px-8 md:py-24 lg:px-16">
+          <div className="max-w-[560px] animate-[fadein_.9s_ease]">
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-[16px] font-semibold tracking-wide">Women · Men · Kids</p>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-secondary">Women · Men · Kids</p>
               {saleCount > 0 && (
-                <Link href="/shop?sale=1" className="rounded-full bg-white px-3 py-1 text-sm font-bold text-heading shadow-sm ring-1 ring-primary/40 transition hover:bg-primary">
+                <Link href="/shop?sale=1" className="rounded-full border border-secondary/60 px-3 py-0.5 text-[13px] text-secondary transition hover:bg-secondary hover:text-heading">
                   Sale on now
                 </Link>
               )}
             </div>
-            <h1 className="mt-5 max-w-[620px] text-[42px] leading-[1.05] sm:text-[56px] xl:text-[70px]">{SITE.tagline}</h1>
-            <p className="mt-6 max-w-md text-[17px] leading-relaxed text-foreground/80">
+            <h1 className="mt-5 text-[42px] leading-[1.08] !text-footer-text sm:text-[54px] xl:text-[68px]">{SITE.tagline}</h1>
+            <p className="mt-6 max-w-md text-[17px] leading-relaxed tracking-wide text-footer-text/85">
               Dresses, lingerie, sleepwear, men&apos;s tailoring and kids&apos; wear — all in one place.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="mt-10 flex flex-wrap items-center gap-4">
               <Link
                 href="/shop"
-                className="group inline-flex items-center gap-4 rounded-full bg-heading py-2 pl-7 pr-2 text-[16px] font-semibold text-white shadow-lg transition hover:bg-primary hover:text-heading"
+                className="inline-flex items-center gap-2 rounded-sm bg-white px-8 py-3.5 text-[14px] font-semibold uppercase tracking-[0.12em] text-heading transition hover:bg-primary"
               >
                 Shop Now
-                <span className="grid size-10 place-items-center rounded-full bg-white text-heading transition-transform group-hover:rotate-45">
-                  <ArrowUpRight className="size-5" strokeWidth={1.75} />
-                </span>
               </Link>
               <Link
                 href="/shop?category=new-arrival"
-                className="inline-flex items-center rounded-full border border-heading px-7 py-[17px] text-[16px] font-semibold leading-none transition hover:bg-heading hover:text-white"
+                className="group inline-flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.12em] text-footer-text/90 hover:text-secondary"
               >
-                New Arrivals
+                New Arrivals <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </div>
-
-          {/* Centre: arched feature image */}
-          {heroMain && (
-            <Link href={`/product/${heroMain.slug}`} className="group relative mx-auto block w-full max-w-[440px] lg:max-w-none" aria-label={decodeEntities(heroMain.name)}>
-              <span className="block overflow-hidden rounded-t-[999px] rounded-b-3xl shadow-2xl lg:rounded-b-none">
-                <img
-                  src={heroMain.images[0].src}
-                  srcSet={heroMain.images[0].srcset}
-                  sizes="(min-width:1024px) 34vw, (min-width:768px) 45vw, 90vw"
-                  alt={heroMain.images[0].alt || decodeEntities(heroMain.name)}
-                  fetchPriority="high"
-                  className="aspect-[3/4] w-full object-cover object-top transition duration-[1.5s] group-hover:scale-105"
-                />
-              </span>
-            </Link>
-          )}
-
-          {/* Right: featured product card */}
-          {heroCard && <HeroProductCard product={heroCard} />}
         </div>
       </section>
 
@@ -236,46 +216,5 @@ async function HomeContent() {
         </section>
       )}
     </>
-  );
-}
-
-/** Hero side card showing one real WooCommerce product. */
-function HeroProductCard({ product }: { product: WCProduct }) {
-  const img = product.images[0];
-  const name = decodeEntities(product.name);
-  const href = `/product/${product.slug}`;
-  const regular = Number(product.prices.regular_price);
-  const pct = product.on_sale && regular > 0 ? Math.round((1 - Number(product.prices.price) / regular) * 100) : 0;
-  return (
-    <div className="relative z-10 mx-auto w-full max-w-[360px] self-center rounded-2xl border border-line bg-white p-3 shadow-xl lg:mb-16 lg:animate-float">
-      <Link href={href} className="relative block overflow-hidden rounded-xl bg-card" aria-label={name}>
-        <img
-          src={img.thumbnail}
-          srcSet={img.thumbnail_srcset || img.srcset}
-          sizes="360px"
-          alt={img.alt || name}
-          className="aspect-[4/3] w-full object-cover object-top transition duration-700 hover:scale-105"
-        />
-        {pct > 0 && (
-          <span className="absolute right-3 top-3 rounded-full bg-heading px-3 py-1 text-sm font-bold text-white">{pct}% Off</span>
-        )}
-        <span className="absolute bottom-3 right-3 grid size-11 place-items-center rounded-full border-2 border-white bg-primary text-heading shadow-md" aria-hidden>
-          <ShoppingBag className="size-5" strokeWidth={1.75} />
-        </span>
-      </Link>
-      <div className="px-2 pb-2 pt-4">
-        <Link href={href} className="hover:text-primary-hover">
-          <h2 className="line-clamp-2 font-sans text-[17px] leading-snug">{name}</h2>
-        </Link>
-        {product.review_count > 0 && (
-          <div className="mt-2">
-            <Stars rating={Number(product.average_rating)} count={product.review_count} />
-          </div>
-        )}
-        <div className="mt-3">
-          <Price prices={product.prices} onSale={product.on_sale} large />
-        </div>
-      </div>
-    </div>
   );
 }
