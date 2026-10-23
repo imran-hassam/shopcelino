@@ -148,7 +148,7 @@ export async function textSearchIds(term: string): Promise<number[]> {
     }
     const ids: number[] = [];
     for (let page = 1; page <= MAX_RESULTS / 100; page++) {
-      const { data, totalPages } = await storeGet<{ id: number }[]>("/products", { ...query, page });
+      const { data, totalPages } = await getPage<{ id: number }>("/products", { ...query, page });
       ids.push(...data.map((d) => d.id));
       if (page >= totalPages) break;
     }
