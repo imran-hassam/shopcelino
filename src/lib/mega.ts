@@ -139,7 +139,8 @@ export async function getSalesMenu(): Promise<SalesMenuData> {
     };
   });
 
+  // Incomplete (e.g. WordPress timed out): keep it only briefly so the next request retries.
   if (categories.length === 8 && categories.every((c) => c.image) && products.length === 6) cacheLife("hours");
-  else cacheLife("minutes");
+  else cacheLife("seconds");
   return { categories, products };
 }

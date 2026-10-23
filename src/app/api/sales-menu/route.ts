@@ -1,14 +1,20 @@
+import { connection } from "next/server";
 import { getSalesMenu } from "@/lib/mega";
 
-/** "Today's Sales" mega menu data, loaded by the header on first open. Cached at the edge. */
+/**
+ * "Today's Sales" mega menu data, loaded by the header on first open.
+ * Built per request (never baked in at build time, when WordPress may be slow) and cached
+ * at the edge only once the result is complete.
+ */
 export async function GET() {
+  await connection();
   try {
     const data = await getSalesMenu();
     const complete = data.categories.length === 8 && data.categories.every((c) => c.image) && data.products.length === 6;
     return Response.json(data, {
-      headers: { "Cache-Control": complete ? "public, s-maxage=1800, stale-while-revalidate=86400" : "public, s-maxage=60" },
+      headers: { "Cache-Control": complete ? "public, s-maxage=1800, stale-while-revalidate=86400" : "no-store" },
     });
   } catch {
-    return Response.json(null, { status: 502 });
+    return Response.json(null, { status: 502, headers: { "Cache-Control": "no-store" } });
   }
 }

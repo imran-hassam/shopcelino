@@ -50,7 +50,9 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
   const salesBtn = useRef<HTMLAnchorElement>(null);
   const salesShown = salesHover || salesPinned;
   function loadSales() {
-    if (sales || salesLoading.current) return;
+    // Load once; if the last answer was incomplete (store was slow), try again on the next open.
+    const complete = sales && sales.products.length > 0 && sales.categories.every((c) => c.image);
+    if (complete || salesLoading.current) return;
     salesLoading.current = true;
     fetch("/api/sales-menu")
       .then((r) => (r.ok ? r.json() : null))
