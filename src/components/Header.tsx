@@ -8,6 +8,8 @@ import { useStore } from "./StoreProvider";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
 import { SearchBox } from "./SearchBox";
+import { MegaMenu } from "./MegaMenu";
+import type { MegaMenuData } from "@/lib/mega";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -16,11 +18,15 @@ const NAV = [
   { href: "/contact", label: "Contact Us" },
 ];
 
-export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: string }) {
+export function Header({ logoUrl, accountUrl, mega }: { logoUrl: string; accountUrl: string; mega?: MegaMenuData | null }) {
   const { cartCount, wishlist } = useStore();
   const [open, setOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Mega menu content mounts on first hover/focus (keeps its images off the initial page load).
+  const [megaReady, setMegaReady] = useState(false);
+  // Hide right after a click inside it, until the pointer leaves the Shop item.
+  const [megaHidden, setMegaHidden] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -53,31 +59,53 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
           <Logo src={logoUrl} className="h-9 md:h-11" />
         </Link>
 
-        <nav className="ml-10 hidden items-center gap-10 lg:flex" aria-label="Main">
+        <nav className="ml-10 hidden items-center gap-10 self-stretch lg:flex" aria-label="Main">
           {NAV.map((item) =>
             item.dropdown ? (
-              <div key={item.href} className="group relative">
+              <div
+                key={item.href}
+                className="group flex self-stretch"
+                onMouseEnter={() => {
+                  setMegaReady(true);
+                  setMegaHidden(false);
+                }}
+                onFocus={() => setMegaReady(true)}
+                onMouseLeave={() => setMegaHidden(false)}
+              >
                 <NavLink
                   href={item.href}
-                  className="flex items-center gap-1.5 py-6 text-[17px] transition-colors hover:text-primary-hover"
+                  className="flex items-center gap-1.5 text-[17px] transition-colors hover:text-primary-hover"
                   activeClassName="text-primary-hover"
                 >
                   {item.label}
                   <ChevronDown className="size-4 transition-transform group-hover:rotate-180" strokeWidth={1.5} />
                 </NavLink>
-                <div className="invisible absolute left-1/2 top-full w-60 -translate-x-1/2 translate-y-2 rounded-xl border border-line bg-white p-2 opacity-0 shadow-xl transition-all duration-200 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-                  {MENU_CATEGORIES.map((c) => (
-                    <Link
-                      key={c.slug}
-                      href={`/shop?category=${c.slug}`}
-                      className="block rounded-lg px-4 py-2.5 text-[15px] hover:bg-card hover:text-primary-hover"
-                    >
-                      {c.label}
-                    </Link>
-                  ))}
-                  <Link href="/shop" className="mt-1 block rounded-lg border-t border-line px-4 py-2.5 text-[15px] font-semibold hover:bg-card">
-                    Shop All
-                  </Link>
+                {/* Full-width mega menu (positioned against the sticky header) */}
+                <div
+                  className={`invisible absolute inset-x-0 top-full translate-y-1 border-t border-line bg-white opacity-0 shadow-[0_24px_40px_-20px_rgba(34,32,29,.35)] transition-all duration-200 ${
+                    megaHidden
+                      ? ""
+                      : "group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
+                  }`}
+                >
+                  {mega && megaReady ? (
+                    <MegaMenu
+                      data={mega}
+                      onNavigate={() => {
+                        setMegaHidden(true);
+                        (document.activeElement as HTMLElement | null)?.blur();
+                      }}
+                    />
+                  ) : (
+                    <div className="mx-auto flex max-w-[1440px] flex-wrap gap-x-8 gap-y-3 px-8 py-6">
+                      {MENU_CATEGORIES.map((c) => (
+                        <Link key={c.slug} href={`/shop?category=${c.slug}`} className="text-[15px] hover:text-primary-hover">
+                          {c.label}
+                        </Link>
+                      ))}
+                      <Link href="/shop" className="text-[15px] font-semibold hover:text-primary-hover">Shop All</Link>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

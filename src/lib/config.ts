@@ -20,6 +20,9 @@ export const MENU_CATEGORIES: { slug: string; label: string }[] = [
   { slug: "kids", label: "Kids" },
 ];
 
+/** SHOP mega menu "Collections" column (WooCommerce category slugs, shown if they have products). */
+export const MEGA_COLLECTIONS = ["new-arrival", "best-seller", "featured", "limited-pieces", "sleepwear-sale", "t-shirt-sale"];
+
 /** Home page "Best Sellers / New Arrivals" tabs. */
 export const HOME_TABS = [
   { slug: "best-seller", label: "Best Sellers" },
