@@ -4,12 +4,14 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useStore } from "@/components/StoreProvider";
+import { PageHero } from "@/components/PageHero";
 
 export default function WishlistPage() {
   const { wishlist, toggleWish } = useStore();
   return (
-    <div className="mx-auto max-w-[1440px] px-5 pb-24 md:px-8">
-      <h1 className="py-14 text-center text-[44px] md:py-20 md:text-[56px]">Wishlist</h1>
+    <>
+    <PageHero title="Wishlist" crumbs={[{ label: "Wishlist" }]} />
+    <div className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 md:px-8 md:pt-14">
       {wishlist.length === 0 ? (
         <div className="text-center">
           <p className="text-muted">You haven&apos;t saved anything yet. Tap the heart on any product to keep it here.</p>
@@ -31,5 +33,6 @@ export default function WishlistPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

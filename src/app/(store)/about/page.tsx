@@ -2,13 +2,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowUpRight, ChevronRight, House } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { getProducts, getWpPage } from "@/lib/woo";
 import { decodeEntities, sanitizeHtml, stripHtml } from "@/lib/format";
 import { MENU_CATEGORIES, SITE } from "@/lib/config";
 import { CONTACT } from "@/lib/contact";
 import type { WCProduct } from "@/lib/types";
 import { Reveal } from "@/components/Reveal";
+import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -23,22 +24,7 @@ export default function AboutPage() {
   return (
     <>
       {/* Page heading + breadcrumb */}
-      <header className="border-b border-line bg-card/70">
-        <div className="mx-auto max-w-[1440px] px-5 py-12 md:px-8 md:py-16">
-          <h1 className="text-[40px] leading-tight md:text-[52px]">About Us</h1>
-          <nav aria-label="Breadcrumb" className="mt-3">
-            <ol className="flex items-center gap-2 text-[15px]">
-              <li>
-                <Link href="/" className="flex items-center gap-1.5 text-muted hover:text-primary-hover">
-                  <House className="size-4" strokeWidth={1.5} /> Home
-                </Link>
-              </li>
-              <li aria-hidden><ChevronRight className="size-4 text-muted" /></li>
-              <li aria-current="page">About Us</li>
-            </ol>
-          </nav>
-        </div>
-      </header>
+      <PageHero title="About Us" crumbs={[{ label: "About Us" }]} />
 
       <Suspense fallback={<AboutSkeleton />}>
         <AboutContent />

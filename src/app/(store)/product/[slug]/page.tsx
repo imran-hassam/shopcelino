@@ -3,9 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getAdjacentProducts, getProductBySlug, getRelatedProducts, getVariations, getWpPage } from "@/lib/woo";
+import { getAdjacentProducts, getAllCategories, getProductBySlug, getRelatedProducts, getVariations, getWpPage } from "@/lib/woo";
 import { decodeEntities, sanitizeHtml, stripHtml } from "@/lib/format";
-import { SITE } from "@/lib/config";
+import { HIDDEN_CATEGORY_SLUGS, NON_FILTER_CATEGORY_SLUGS, SITE } from "@/lib/config";
+import type { WCCategory } from "@/lib/types";
+import { PageHero, PageHeroSkeleton } from "@/components/PageHero";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductBuyBox } from "@/components/ProductBuyBox";
 import { Accordion } from "@/components/Accordion";
@@ -28,11 +30,9 @@ export async function generateMetadata({ params }: PageProps<"/product/[slug]">)
 
 export default function ProductPage({ params }: PageProps<"/product/[slug]">) {
   return (
-    <div className="mx-auto max-w-[1440px] px-5 pb-20 md:px-8">
-      <Suspense fallback={<ProductSkeleton />}>
-        <ProductContent params={params} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<ProductSkeleton />}>
+      <ProductContent params={params} />
+    </Suspense>
   );
 }
 
@@ -41,15 +41,24 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const [variations, adjacent, related, refundPage, shippingPage] = await Promise.all([
+  const [variations, adjacent, related, refundPage, shippingPage, allCats] = await Promise.all([
     product.variations.length ? getVariations(product.slug, product.variations.map((v) => v.id)) : Promise.resolve([]),
     getAdjacentProducts(product),
     getRelatedProducts(product),
     getWpPage("refund_returns"),
     getWpPage("shipping-policy"),
+    getAllCategories(),
   ]);
 
   const name = decodeEntities(product.name);
+
+  // Breadcrumb category: the product's first real category (skip merchandising tags like "Best Seller"), with its parents.
+  const primaryRef = product.categories.find((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug));
+  const catChain: WCCategory[] = [];
+  for (let c = primaryRef ? allCats.find((x) => x.id === primaryRef.id) ?? null : null; c; c = c.parent ? allCats.find((x) => x.id === c!.parent) ?? null : null) {
+    catChain.unshift(c);
+    if (catChain.length > 5) break;
+  }
   const summary = stripHtml(product.short_description);
   const jsonLd = {
     "@context": "https://schema.org",
@@ -84,32 +93,33 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 py-7 text-[15px]">
-        <nav aria-label="Breadcrumb">
-          <ol className="flex flex-wrap items-center gap-2">
-            <li><Link href="/" className="hover:text-primary-hover">Home</Link></li>
-            <li aria-hidden><ChevronRight className="size-4 text-muted" /></li>
-            <li><Link href="/shop" className="hover:text-primary-hover">All Products</Link></li>
-            <li aria-hidden><ChevronRight className="size-4 text-muted" /></li>
-            <li className="line-clamp-1 max-w-[50vw] text-muted" aria-current="page">{name}</li>
-          </ol>
-        </nav>
-        <div className="flex items-center gap-3">
-          {adjacent.prev ? (
-            <Link href={`/product/${adjacent.prev.slug}`} className="flex items-center gap-1 hover:text-primary-hover"><ChevronLeft className="size-4" /> Previous</Link>
-          ) : <span className="flex items-center gap-1 text-muted"><ChevronLeft className="size-4" /> Previous</span>}
-          <span className="text-muted">|</span>
-          {adjacent.next ? (
-            <Link href={`/product/${adjacent.next.slug}`} className="flex items-center gap-1 hover:text-primary-hover">Next <ChevronRight className="size-4" /></Link>
-          ) : <span className="flex items-center gap-1 text-muted">Next <ChevronRight className="size-4" /></span>}
-        </div>
-      </div>
+      <PageHero
+        title={name}
+        clampTitle
+        crumbs={[
+          { label: "Shop", href: "/shop" },
+          ...catChain.map((c) => ({ label: decodeEntities(c.name), href: `/shop?category=${c.slug}` })),
+          { label: name },
+        ]}
+        aside={
+          <div className="flex items-center gap-3">
+            {adjacent.prev ? (
+              <Link href={`/product/${adjacent.prev.slug}`} className="flex items-center gap-1 hover:text-primary-hover"><ChevronLeft className="size-4" /> Previous</Link>
+            ) : <span className="flex items-center gap-1 text-muted"><ChevronLeft className="size-4" /> Previous</span>}
+            <span className="text-muted">|</span>
+            {adjacent.next ? (
+              <Link href={`/product/${adjacent.next.slug}`} className="flex items-center gap-1 hover:text-primary-hover">Next <ChevronRight className="size-4" /></Link>
+            ) : <span className="flex items-center gap-1 text-muted">Next <ChevronRight className="size-4" /></span>}
+          </div>
+        }
+      />
 
+      <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-10 md:px-8 md:pt-14">
       <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
         <ProductGallery images={product.images} name={name} />
 
         <div className="lg:pt-2">
-          <h1 className="text-[32px] leading-tight md:text-[40px]">{name}</h1>
+          <h2 className="text-[32px] leading-tight md:text-[40px]">{name}</h2>
           <ProductBuyBox
             product={{
               id: product.id,
@@ -159,13 +169,16 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
           </Carousel>
         </section>
       )}
+      </div>
     </>
   );
 }
 
 function ProductSkeleton() {
   return (
-    <div className="grid animate-pulse gap-10 pt-20 lg:grid-cols-[1.15fr_1fr]">
+    <>
+    <PageHeroSkeleton />
+    <div className="mx-auto grid max-w-[1440px] animate-pulse gap-10 px-5 pb-20 pt-10 md:px-8 md:pt-14 lg:grid-cols-[1.15fr_1fr]">
       <div className="aspect-[4/5] rounded-2xl bg-card" />
       <div className="space-y-4">
         <div className="h-10 w-3/4 rounded bg-card" />
@@ -174,5 +187,6 @@ function ProductSkeleton() {
         <div className="h-14 rounded-full bg-card" />
       </div>
     </div>
+    </>
   );
 }

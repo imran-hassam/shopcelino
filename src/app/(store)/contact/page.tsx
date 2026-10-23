@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CONTACT } from "@/lib/contact";
 import { ContactForm } from "@/components/ContactForm";
 import { Reveal } from "@/components/Reveal";
+import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -12,11 +13,13 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   const mapQuery = encodeURIComponent(CONTACT.address.join(", "));
   return (
-    <div className="mx-auto max-w-[1440px] px-5 pb-24 md:px-8">
-      <header className="py-14 text-center md:py-20">
-        <h1 className="text-[44px] md:text-[64px]">Contact Us</h1>
-        <p className="mt-4 text-[17px]">Questions about sizing, an order or delivery? We&apos;re here to help.</p>
-      </header>
+    <>
+    <PageHero
+      title="Contact Us"
+      crumbs={[{ label: "Contact Us" }]}
+      description="Questions about sizing, an order or delivery? We're here to help."
+    />
+    <div className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 md:px-8 md:pt-14">
 
       <div className="grid gap-12 lg:grid-cols-2 lg:gap-14">
         <Reveal>
@@ -44,5 +47,6 @@ export default function ContactPage() {
         </Reveal>
       </div>
     </div>
+    </>
   );
 }

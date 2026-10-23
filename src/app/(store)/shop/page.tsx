@@ -6,6 +6,7 @@ import { HIDDEN_CATEGORY_SLUGS, NON_FILTER_CATEGORY_SLUGS, PAGE_SIZE } from "@/l
 import { decodeEntities, stripHtml } from "@/lib/format";
 import { ProductCard } from "@/components/ProductCard";
 import { ShopFilters } from "@/components/ShopFilters";
+import { PageHero, PageHeroSkeleton, type Crumb } from "@/components/PageHero";
 import { SortSelect } from "@/components/SortSelect";
 
 type SP = Record<string, string | string[] | undefined>;
@@ -34,11 +35,9 @@ const SORTS: Record<string, Pick<ProductQuery, "orderby" | "order">> = {
 
 export default function ShopPage({ searchParams }: PageProps<"/shop">) {
   return (
-    <div className="mx-auto max-w-[1440px] px-5 pb-24 md:px-8">
-      <Suspense fallback={<ShopSkeleton />}>
-        <ShopContent searchParams={searchParams as Promise<SP>} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<ShopSkeleton />}>
+      <ShopContent searchParams={searchParams as Promise<SP>} />
+    </Suspense>
   );
 }
 
@@ -73,7 +72,20 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
     .map((c) => ({ slug: c.slug, name: decodeEntities(c.name), count: c.count }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const title = cat ? decodeEntities(cat.name) : q ? `Results for “${q}”` : "Shop All Products";
+  const title = q ? `Results for “${q}”` : cat ? decodeEntities(cat.name) : "Shop All Products";
+
+  // Breadcrumb: Home › Shop › parent categories › current category (› Search results)
+  const chain: typeof cats = [];
+  for (let c = cat; c; c = c.parent ? cats.find((x) => x.id === c!.parent) ?? null : null) {
+    chain.unshift(c);
+    if (chain.length > 5) break;
+  }
+  const crumbs: Crumb[] = [
+    { label: "Shop", href: "/shop" },
+    ...chain.map((c) => ({ label: decodeEntities(c.name), href: `/shop?category=${c.slug}` })),
+    ...(q ? [{ label: "Search results" }] : []),
+  ];
+  if (!cat && !q) crumbs.splice(0, 1, { label: "Shop" });
   const from = result.total ? (page - 1) * PAGE_SIZE + 1 : 0;
   const to = Math.min(page * PAGE_SIZE, result.total);
 
@@ -87,18 +99,13 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
 
   return (
     <>
-      <header className="py-14 text-center md:py-20">
-        <h1 className="text-[38px] md:text-[56px]">{title}</h1>
-        {cat?.description ? (
-          <p className="mx-auto mt-4 max-w-2xl text-[17px] text-foreground/75">{stripHtml(cat.description)}</p>
-        ) : (
-          !q && (
-            <p className="mx-auto mt-4 max-w-2xl text-[17px] text-foreground/75">
-              Browse our full collection of women&apos;s, men&apos;s and kids&apos; fashion.
-            </p>
-          )
-        )}
-      </header>
+      <PageHero
+        title={title}
+        crumbs={crumbs}
+        description={cat?.description ? stripHtml(cat.description) : undefined}
+      />
+
+      <div className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 md:px-8 md:pt-14">
 
       <div className="grid gap-10 lg:grid-cols-[300px_1fr] lg:gap-8">
         <ShopFilters categories={filterCats} />
@@ -144,6 +151,7 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
           )}
         </section>
       </div>
+      </div>
     </>
   );
 }
@@ -185,8 +193,9 @@ function PageLink({
 
 function ShopSkeleton() {
   return (
-    <div className="animate-pulse">
-      <div className="mx-auto my-16 h-12 w-80 rounded bg-card" />
+    <>
+    <PageHeroSkeleton />
+    <div className="mx-auto max-w-[1440px] animate-pulse px-5 pb-24 pt-10 md:px-8 md:pt-14">
       <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
         <div className="hidden h-96 rounded-xl bg-card lg:block" />
         <div className="grid grid-cols-2 gap-6 xl:grid-cols-3">
@@ -200,5 +209,6 @@ function ShopSkeleton() {
         </div>
       </div>
     </div>
+    </>
   );
 }
