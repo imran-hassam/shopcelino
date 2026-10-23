@@ -51,32 +51,28 @@ async function HomeContent() {
   ]);
 
   const saleCount = sale.total;
-  const heroProducts = hero.products.length ? hero.products : tabData[0]?.products ?? [];
-  const heroMain = heroProducts.find((p) => p.images.length) ?? null;
+  // Hero collage: three real product photos from different categories (women, men, kids…).
+  const heroPool = [
+    ...["womens-dresses", "mens-formal-wear", "kids", "women-sleepwear", "womens-lingerie"].map(
+      (slug) => catTiles.find((c) => c.slug === slug)?.product,
+    ),
+    ...hero.products,
+    ...(tabData[0]?.products ?? []),
+  ];
+  const collage: WCProduct[] = [];
+  for (const p of heroPool) {
+    if (p?.images.length && collage.length < 3 && !collage.some((x) => x.id === p.id || x.images[0].src === p.images[0].src)) collage.push(p);
+  }
 
   return (
     <>
-      {/* HERO — full-width photo on the right, text on the left */}
+      {/* HERO — text on the left, a collage of real product photos on the right */}
       <section className="relative isolate overflow-hidden bg-footer text-footer-text">
-        {heroMain && (
-          <div className="absolute inset-0 lg:left-auto lg:w-[64%]">
-            <Image
-              src={heroMain.images[0].src}
-              alt={heroMain.images[0].alt || decodeEntities(heroMain.name)}
-              fill
-              sizes="(min-width:1024px) 64vw, 100vw"
-              quality={80}
-              fetchPriority="high"
-              loading="eager"
-              className="animate-[heroZoom_18s_ease-out_both] object-cover object-[50%_22%]"
-            />
-            {/* Blend the photo into the brown panel (left on desktop, bottom on mobile) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-footer via-footer/75 to-footer/5 lg:bg-gradient-to-r lg:from-footer lg:via-footer/35 lg:to-transparent" />
-          </div>
-        )}
+        {/* Soft brand-gold glow behind the collage */}
+        <div aria-hidden className="pointer-events-none absolute -right-40 top-1/2 -z-10 size-[720px] -translate-y-1/2 rounded-full bg-primary/15 blur-3xl" />
 
-        <div className="relative mx-auto flex min-h-[600px] max-w-[1440px] items-end px-5 pb-14 pt-56 md:min-h-[680px] md:px-8 md:pb-16 lg:min-h-[min(78vh,720px)] lg:items-center lg:px-16 lg:py-24">
-          <div className="max-w-[560px] animate-[fadein_.9s_ease]">
+        <div className="relative mx-auto grid max-w-[1440px] items-center gap-12 px-5 py-14 md:px-8 md:py-16 lg:min-h-[min(78vh,720px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16 lg:px-16 lg:py-20">
+          <div className="order-2 max-w-[560px] animate-[fadein_.9s_ease] lg:order-1">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-secondary">Women · Men · Kids</p>
               {saleCount > 0 && (
@@ -104,6 +100,8 @@ async function HomeContent() {
               </Link>
             </div>
           </div>
+
+          {collage.length > 0 && <HeroCollage products={collage} />}
         </div>
       </section>
 
@@ -219,5 +217,41 @@ async function HomeContent() {
         </section>
       )}
     </>
+  );
+}
+
+/** Hero artwork: real product photos arranged as an editorial collage (one large, two staggered). */
+function HeroCollage({ products }: { products: WCProduct[] }) {
+  const [big, ...small] = products;
+  const tile = (p: WCProduct, sizes: string, priority: boolean, cls: string) => (
+    <Link
+      key={p.id}
+      href={`/product/${p.slug}`}
+      className={`group relative block overflow-hidden rounded-sm bg-card shadow-2xl shadow-black/40 ring-1 ring-secondary/30 ${cls}`}
+    >
+      <Image
+        src={p.images[0].src}
+        alt={p.images[0].alt || decodeEntities(p.name)}
+        fill
+        sizes={sizes}
+        quality={80}
+        {...(priority ? { fetchPriority: "high" as const, loading: "eager" as const } : {})}
+        className="object-cover object-top transition duration-700 group-hover:scale-105"
+      />
+      <span className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-footer/90 to-transparent px-4 pb-3 pt-8 text-[13px] leading-snug text-footer-text transition duration-300 group-hover:translate-y-0 group-focus-visible:translate-y-0">
+        <span className="line-clamp-2">{decodeEntities(p.name)}</span>
+      </span>
+    </Link>
+  );
+  return (
+    <div className="order-1 animate-[fadein_1.1s_ease] lg:order-2">
+      <div className="relative mx-auto grid max-w-[640px] grid-cols-[1.25fr_1fr] gap-4 sm:gap-5">
+        {/* Thin gold frame offset behind the large photo */}
+        <div aria-hidden className="absolute -left-3 -top-3 hidden h-[78%] w-[52%] border border-primary/60 sm:block" />
+        {tile(big, "(min-width:1024px) 30vw, 55vw", true, "row-span-2 min-h-[300px]")}
+        {small[0] && tile(small[0], "(min-width:1024px) 22vw, 45vw", true, "aspect-square lg:translate-y-8")}
+        {small[1] && tile(small[1], "(min-width:1024px) 22vw, 45vw", false, "aspect-square lg:translate-y-8")}
+      </div>
+    </div>
   );
 }
