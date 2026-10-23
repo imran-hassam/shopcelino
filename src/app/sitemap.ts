@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
-import { cacheLife } from "next/cache";
+import { connection } from "next/server";
 import { SITE, MENU_CATEGORIES } from "@/lib/config";
 import { getProducts } from "@/lib/woo";
 
+// Built on request (not during deploy) so a slow WordPress server can't fail the build.
+// Product lists are still cached by getProducts().
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  "use cache";
-  cacheLife("hours");
+  await connection();
   const base = SITE.url;
   const pages: MetadataRoute.Sitemap = ["", "/shop", "/about", "/contact"].map((p) => ({ url: `${base}${p}` }));
   const cats = MENU_CATEGORIES.map((c) => ({ url: `${base}/shop?category=${c.slug}` }));
