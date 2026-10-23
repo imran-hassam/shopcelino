@@ -18,16 +18,14 @@ export type MegaMenuData = {
 export async function getMegaMenu(): Promise<MegaMenuData> {
   "use cache";
   cacheTag("products", "categories", "mega-menu");
-  cacheLife("hours");
-
   const cats = await getAllCategories();
   const bySlug = new Map(cats.map((c) => [c.slug, c]));
 
   // Top row: the first five menu categories that exist and have products.
   const top = MENU_CATEGORIES.map((m) => bySlug.get(m.slug)).filter((c) => c && c.count > 0).slice(0, 5) as typeof cats;
   const [topLists, featured, post] = await Promise.all([
-    Promise.all(top.map((c) => (c.image ? Promise.resolve(null) : getProducts({ category: c.slug, perPage: 1, orderby: "popularity" })))),
-    getProducts({ category: "featured", perPage: 3 }),
+    Promise.all(top.map((c) => (c.image ? Promise.resolve(null) : getProducts({ category: c.slug, perPage: 6, orderby: "popularity" })))),
+    getProducts({ category: "featured", perPage: 12 }),
     getLatestPost(),
   ]);
 
@@ -36,7 +34,7 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
     name: decodeEntities(c.name),
     count: c.count,
     // The category's own image if it has one, otherwise a photo of one of its products.
-    image: c.image?.thumbnail ?? topLists[i]?.products[0]?.images[0]?.thumbnail ?? null,
+    image: c.image?.thumbnail ?? topLists[i]?.products.find((p) => p.images.length)?.images[0]?.thumbnail ?? null,
     children: cats.filter((x) => x.parent === c.id && x.count > 0).slice(0, 2).map((x) => ({ slug: x.slug, name: decodeEntities(x.name) })),
   }));
 
@@ -44,7 +42,15 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
     .filter((c) => c && c.count > 0)
     .map((c) => ({ slug: c!.slug, name: decodeEntities(c!.name), count: c!.count }));
 
-  const products = featured.products.slice(0, 3).map((p) => {
+  // Three featured products with clearly different names (many share the same long prefix).
+  const seen = new Set<string>();
+  const picks = featured.products.filter((p) => {
+    const key = decodeEntities(p.name).toLowerCase().replace(/[^a-z ]/g, "").split(" ").slice(0, 4).join(" ");
+    if (!p.images.length || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const products = picks.slice(0, 3).map((p) => {
     const r = p.prices.price_range;
     return {
       slug: p.slug,
@@ -61,6 +67,9 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
       ? { kind: "category", slug: newArrival.slug, name: decodeEntities(newArrival.name), count: newArrival.count }
       : null;
 
+  // If WordPress didn't answer for something, try again in a few minutes instead of keeping the gap for hours.
+  const complete = categories.length === 5 && categories.every((c) => c.image) && products.length === 3;
+  cacheLife(complete ? "hours" : "minutes");
   return { categories, collections, products, feature };
 }
 
