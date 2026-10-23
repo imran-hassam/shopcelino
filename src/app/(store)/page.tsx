@@ -23,7 +23,7 @@ export default function Home() {
 function HomeSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="min-h-[600px] bg-footer md:min-h-[min(78vh,720px)]" />
+      <div className="min-h-[600px] bg-footer md:min-h-[680px] lg:min-h-[min(78vh,720px)]" />
       <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-5 px-5 py-20 md:grid-cols-4 md:px-8">
         {Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[3/4] rounded-xl bg-card" />)}
       </div>
@@ -59,23 +59,23 @@ async function HomeContent() {
       {/* HERO — full-width photo on the right, text on the left */}
       <section className="relative isolate overflow-hidden bg-footer text-footer-text">
         {heroMain && (
-          <div className="absolute inset-0 md:left-auto md:w-[64%]">
+          <div className="absolute inset-0 lg:left-auto lg:w-[64%]">
             <Image
               src={heroMain.images[0].src}
               alt={heroMain.images[0].alt || decodeEntities(heroMain.name)}
               fill
-              sizes="(min-width:768px) 64vw, 100vw"
+              sizes="(min-width:1024px) 64vw, 100vw"
               quality={80}
               fetchPriority="high"
               loading="eager"
               className="animate-[heroZoom_18s_ease-out_both] object-cover object-[50%_22%]"
             />
             {/* Blend the photo into the brown panel (left on desktop, bottom on mobile) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-footer via-footer/60 to-footer/10 md:bg-gradient-to-r md:from-footer md:via-footer/35 md:to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-footer via-footer/75 to-footer/5 lg:bg-gradient-to-r lg:from-footer lg:via-footer/35 lg:to-transparent" />
           </div>
         )}
 
-        <div className="relative mx-auto flex min-h-[600px] max-w-[1440px] items-end px-5 pb-14 pt-56 md:min-h-[min(78vh,720px)] md:items-center md:px-8 md:py-24 lg:px-16">
+        <div className="relative mx-auto flex min-h-[600px] max-w-[1440px] items-end px-5 pb-14 pt-56 md:min-h-[680px] md:px-8 md:pb-16 lg:min-h-[min(78vh,720px)] lg:items-center lg:px-16 lg:py-24">
           <div className="max-w-[560px] animate-[fadein_.9s_ease]">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-secondary">Women · Men · Kids</p>
