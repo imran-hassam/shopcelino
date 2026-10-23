@@ -65,6 +65,8 @@ export type WCProduct = {
   low_stock_remaining: number | null;
   sold_individually: boolean;
   add_to_cart: { minimum: number; maximum: number; multiple_of: number };
+  /** Added by this site: SKU to show on product cards (first available variation for variable products). */
+  card_sku?: string;
 };
 
 export type WCCategory = {

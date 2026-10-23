@@ -28,6 +28,7 @@ export default function WishlistPage() {
                 <X className="size-4" />
               </button>
               <Link href={w.slug ? `/product/${w.slug}` : "/shop"} className="mt-4 block hover:text-primary-hover">{w.name}</Link>
+              {w.sku && <p className="mt-1 truncate text-[13px] text-muted">SKU: {w.sku}</p>}
             </div>
           ))}
         </div>

@@ -19,6 +19,7 @@ export function ProductCard({ product, priority = false }: { product: WCProduct;
   const name = decodeEntities(product.name);
   const badge = productBadge(product);
   const href = `/product/${product.slug}`;
+  const sku = product.card_sku ?? product.sku;
   return (
     <article className="group">
       <div className="relative overflow-hidden rounded-xl bg-card">
@@ -56,7 +57,7 @@ export function ProductCard({ product, priority = false }: { product: WCProduct;
           </span>
         )}
         <WishButton
-          item={{ id: product.id, slug: product.slug, name, image: img?.thumbnail, price: product.prices.price }}
+          item={{ id: product.id, slug: product.slug, name, image: img?.thumbnail, price: product.prices.price, sku }}
           className="absolute right-3 top-3"
         />
         {!product.is_in_stock && (
@@ -66,6 +67,7 @@ export function ProductCard({ product, priority = false }: { product: WCProduct;
       <Link href={href} className="mt-4 block text-[16px] leading-snug hover:text-primary-hover">
         <h3 className="line-clamp-2 font-sans text-[16px]">{name}</h3>
       </Link>
+      {sku && <p className="mt-1 truncate text-[13px] text-muted">SKU: {sku}</p>}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <Price prices={product.prices} onSale={product.on_sale} />
         {product.review_count > 0 && <Stars rating={Number(product.average_rating)} count={product.review_count} />}

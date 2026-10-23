@@ -29,7 +29,7 @@ function buildUrl(path: string, query: Query = {}) {
   return u.toString();
 }
 
-async function storeGet<T>(path: string, query: Query = {}) {
+export async function storeGet<T>(path: string, query: Query = {}) {
   const res = await fetch(buildUrl(STORE + path, query), {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(15000),
@@ -72,7 +72,7 @@ export async function getCategory(slug: string) {
   return cats.find((c) => c.slug === slug) ?? null;
 }
 
-async function hiddenCategoryIds() {
+export async function hiddenCategoryIds() {
   const cats = await getAllCategories();
   return cats.filter((c) => HIDDEN_CATEGORY_SLUGS.includes(c.slug)).map((c) => c.id);
 }
@@ -84,7 +84,9 @@ export type ProductQuery = {
   search?: string;
   page?: number;
   perPage?: number;
-  orderby?: "date" | "price" | "popularity" | "rating" | "title" | "menu_order";
+  orderby?: "date" | "price" | "popularity" | "rating" | "title" | "menu_order" | "include";
+  /** Restrict to these product ids (used by search results). Empty array = no results. */
+  include?: number[];
   order?: "asc" | "desc";
   minPrice?: number; // whole currency units
   maxPrice?: number;
@@ -96,7 +98,12 @@ export async function getProducts(q: ProductQuery = {}): Promise<ProductList> {
   "use cache";
   cacheTag("products");
   try {
+    if (q.include && q.include.length === 0) {
+      cacheLife("hours");
+      return { products: [], total: 0, totalPages: 0 };
+    }
     const query: Query = {
+      include: q.include?.join(","),
       per_page: q.perPage ?? PAGE_SIZE,
       page: q.page ?? 1,
       orderby: q.orderby,
@@ -122,12 +129,49 @@ export async function getProducts(q: ProductQuery = {}): Promise<ProductList> {
       }
     }
     const { data, total, totalPages } = await storeGet<WCProduct[]>("/products", query);
+    // Product cards show a SKU; skip for large internal lists (sitemap, prev/next) that don't render cards.
+    if (data.length <= 24) await attachCardSkus(data);
     cacheLife("hours");
     return { products: data, total, totalPages };
   } catch (e) {
     console.error(e);
     cacheLife("seconds");
     return { products: [], total: 0, totalPages: 0 };
+  }
+}
+
+/**
+ * Sets `card_sku` on each product: the product's own SKU, or for variable products
+ * the SKU of the first variation (in the store's order) that is in stock and purchasable.
+ * One extra Store API request per 100 variations.
+ */
+async function attachCardSkus(list: WCProduct[]) {
+  const ids = list.filter((p) => p.type === "variable").flatMap((p) => p.variations.map((v) => v.id));
+  const info = new Map<number, { sku: string; ok: boolean }>();
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      try {
+        const { data } = await storeGet<{ id: number; sku: string; is_in_stock: boolean; is_purchasable: boolean }[]>("/products", {
+          type: "variation",
+          include: chunk.join(","),
+          per_page: 100,
+          _fields: "id,sku,is_in_stock,is_purchasable",
+        });
+        data.forEach((v) => info.set(v.id, { sku: v.sku, ok: v.is_in_stock && v.is_purchasable }));
+      } catch (e) {
+        console.error(e);
+      }
+    }),
+  );
+  for (const p of list) {
+    if (p.type === "variable") {
+      const first = p.variations.find((r) => info.get(r.id)?.ok && info.get(r.id)?.sku);
+      p.card_sku = first ? info.get(first.id)!.sku : p.sku;
+    } else {
+      p.card_sku = p.sku;
+    }
   }
 }
 

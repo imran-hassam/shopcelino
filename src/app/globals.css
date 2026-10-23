@@ -64,6 +64,8 @@ h1, h2, h3, .font-display { font-family: var(--font-marcellus), Georgia, serif; 
 @layer base { h1, h2, h3 { color: var(--heading-color); } }
 
 :focus-visible { outline: 2px solid var(--primary-hover); outline-offset: 2px; }
+/* Header search: no inner box on focus — the rounded field shows focus via its border instead. */
+[data-search-input]:focus, [data-search-input]:focus-visible { outline: none; box-shadow: none; }
 
 /* Scroll reveal (see components/Reveal.tsx) */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }

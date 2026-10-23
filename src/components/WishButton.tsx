@@ -3,7 +3,7 @@
 import { Heart } from "lucide-react";
 import { useStore } from "./StoreProvider";
 
-type Item = { id: number; slug: string; name: string; image?: string; price?: string };
+type Item = { id: number; slug: string; name: string; image?: string; price?: string; sku?: string };
 
 export function WishButton({ item, className = "" }: { item: Item; className?: string }) {
   const { isWished, toggleWish } = useStore();

@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ChevronDown, Heart, Menu, ShoppingBag, User, X } from "lucide-react";
 import { MENU_CATEGORIES } from "@/lib/config";
 import { useStore } from "./StoreProvider";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
+import { SearchBox } from "./SearchBox";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -17,11 +17,9 @@ const NAV = [
 ];
 
 export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: string }) {
-  const router = useRouter();
   const { cartCount, wishlist } = useStore();
   const [open, setOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
-  const [q, setQ] = useState("");
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -34,12 +32,6 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
     document.body.style.overflow = open ? "hidden" : "";
   }, [open]);
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const term = q.trim();
-    router.push(term ? `/shop?q=${encodeURIComponent(term)}` : "/shop");
-    setOpen(false);
-  }
 
   return (
     <header
@@ -102,20 +94,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
         </nav>
 
         <div className="ml-auto flex items-center gap-3 md:gap-5">
-          <form onSubmit={submit} role="search" className="hidden md:block">
-            <label className="flex w-[260px] items-center rounded-full border border-heading/70 px-4 py-2 transition-colors focus-within:border-primary-hover xl:w-[310px]">
-              <span className="sr-only">Search products</span>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Find your style here..."
-                className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted"
-              />
-              <button type="submit" aria-label="Search">
-                <Search className="size-5" strokeWidth={1.5} />
-              </button>
-            </label>
-          </form>
+          <SearchBox variant="desktop" />
           <Link href="/wishlist" aria-label={`Wishlist (${wishlist.length})`} className="relative p-1">
             <Heart className="size-6" strokeWidth={1.5} />
             {wishlist.length > 0 && <Badge n={wishlist.length} />}
@@ -149,20 +128,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
             <X className="size-6" strokeWidth={1.5} />
           </button>
         </div>
-        <form onSubmit={submit} role="search" className="px-5 pt-5">
-          <label className="flex items-center rounded-full border border-heading/70 bg-white px-4 py-2.5">
-            <span className="sr-only">Search products</span>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Find your style here..."
-              className="w-full bg-transparent outline-none placeholder:text-muted"
-            />
-            <button type="submit" aria-label="Search">
-              <Search className="size-5" strokeWidth={1.5} />
-            </button>
-          </label>
-        </form>
+        <SearchBox variant="drawer" onNavigate={() => setOpen(false)} />
         <nav
           className="flex-1 overflow-y-auto px-5 py-4 text-lg"
           aria-label="Mobile"

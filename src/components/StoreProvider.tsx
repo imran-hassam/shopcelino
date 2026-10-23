@@ -4,7 +4,7 @@ import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { WCCart } from "@/lib/types";
 
-type WishItem = { id: number; slug: string; name: string; image?: string; price?: string };
+type WishItem = { id: number; slug: string; name: string; image?: string; price?: string; sku?: string };
 
 type Notice = { id: number; text: string; kind: "ok" | "error"; link?: { href: string; label: string } };
 

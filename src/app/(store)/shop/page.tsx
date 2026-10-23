@@ -7,6 +7,7 @@ import { decodeEntities, stripHtml } from "@/lib/format";
 import { ProductCard } from "@/components/ProductCard";
 import { ShopFilters } from "@/components/ShopFilters";
 import { PageHero, PageHeroSkeleton, type Crumb } from "@/components/PageHero";
+import { searchProductIds } from "@/lib/search";
 import { SortSelect } from "@/components/SortSelect";
 
 type SP = Record<string, string | string[] | undefined>;
@@ -52,14 +53,17 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
   const onSale = one(sp.sale) === "1";
   const inStock = one(sp.stock) === "1";
 
+  // Search: product ids matching title, descriptions or any product/variation SKU (best first).
+  const found = q.trim() ? await searchProductIds(q) : null;
+
   const [cats, cat, result] = await Promise.all([
     getAllCategories(),
     category ? getCategory(category) : Promise.resolve(null),
     getProducts({
       category: category || undefined,
-      search: q || undefined,
+      include: found ? found.ids : undefined,
       page,
-      ...SORTS[sort],
+      ...(found && sort === "featured" ? { orderby: "include" as const, order: "asc" as const } : SORTS[sort]),
       minPrice: Number.isFinite(min) ? min : undefined,
       maxPrice: Number.isFinite(max) ? max : undefined,
       onSale,

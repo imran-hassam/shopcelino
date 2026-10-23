@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import type { WCAttribute, WCPrices, WCVariationRef } from "@/lib/types";
 import { Price } from "./Price";
@@ -45,7 +45,43 @@ export function ProductBuyBox({ product, variations, summary }: Props) {
   const router = useRouter();
   const { addToCart } = useStore();
   const isVariable = product.type === "variable" && product.attributes.length > 0;
-  const [chosen, setChosen] = useState<Record<string, string>>({});
+  const attrFor = (name: string) => product.attributes.find((a) => norm(a.name) === norm(name) || norm(a.taxonomy ?? "") === norm(name));
+  const isAvailable = (id: number) => {
+    const v = variations.find((x) => x.id === id);
+    return Boolean(v && v.is_in_stock && v.is_purchasable);
+  };
+  // The option choices that select a given variation (null if it can't be expressed as button choices).
+  function choiceFor(ref: WCVariationRef): Record<string, string> | null {
+    const c: Record<string, string> = {};
+    for (const attr of product.attributes) {
+      const ra = ref.attributes.find((x) => attrFor(x.name) === attr);
+      if (!ra || !ra.value) return null;
+      const term = attr.terms.find((t) => norm(t.name) === norm(ra.value) || norm(t.slug) === norm(ra.value));
+      if (!term) return null;
+      c[attr.name] = term.name;
+    }
+    return c;
+  }
+  // Start with the first variation (store order) that is in stock and purchasable.
+  const [chosen, setChosen] = useState<Record<string, string>>(() => {
+    if (!isVariable) return {};
+    for (const ref of product.variationRefs) {
+      if (!isAvailable(ref.id)) continue;
+      const c = choiceFor(ref);
+      if (c) return c;
+    }
+    return {};
+  });
+
+  // Coming from a search result for a specific variation SKU (?variation=ID): select it if it can be bought.
+  useEffect(() => {
+    if (!isVariable) return;
+    const id = Number(new URLSearchParams(window.location.search).get("variation"));
+    const ref = id ? product.variationRefs.find((r) => r.id === id) : undefined;
+    const c = ref && isAvailable(ref.id) ? choiceFor(ref) : null;
+    if (c) Promise.resolve().then(() => setChosen(c));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState<"add" | "buy" | null>(null);
   const [error, setError] = useState("");
@@ -69,6 +105,12 @@ export function ProductBuyBox({ product, variations, summary }: Props) {
   }, [chosen, isVariable, product.attributes, product.variationRefs]);
 
   const variation = matchRef ? variations.find((v) => v.id === matchRef.id) ?? null : null;
+
+  // Show the selected variation's own photo in the gallery.
+  const variationImage = variation?.image;
+  useEffect(() => {
+    if (variationImage) window.dispatchEvent(new CustomEvent("sc:variation-image", { detail: variationImage }));
+  }, [variationImage]);
 
   // Is an option available given the other current choices?
   function optionAvailable(attrName: string, termName: string) {
@@ -146,12 +188,6 @@ export function ProductBuyBox({ product, variations, summary }: Props) {
                       const next = { ...chosen, [attr.name]: sel ? "" : t.name };
                       setChosen(next);
                       setError("");
-                      // Switch gallery photo if this variation has its own image.
-                      const ref = product.variationRefs.find((r) =>
-                        r.attributes.some((ra) => norm(ra.value) === norm(t.name) || norm(ra.value) === norm(t.slug)),
-                      );
-                      const img = ref && variations.find((v) => v.id === ref.id)?.image;
-                      if (img) window.dispatchEvent(new CustomEvent("sc:variation-image", { detail: img }));
                     }}
                     className={`min-w-12 rounded-lg border px-4 py-2 text-sm transition ${
                       sel
@@ -206,7 +242,7 @@ export function ProductBuyBox({ product, variations, summary }: Props) {
           {busy === "add" ? "Adding…" : "Add to Cart"}
         </button>
         <WishButton
-          item={{ id: product.id, slug: product.slug, name: product.name, image: product.image, price: product.prices.price }}
+          item={{ id: product.id, slug: product.slug, name: product.name, image: product.image, price: product.prices.price, sku }}
           className="size-[52px] border border-heading/30 !bg-white"
         />
       </div>
