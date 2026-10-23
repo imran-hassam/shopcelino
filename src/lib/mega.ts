@@ -115,11 +115,17 @@ export async function getSalesMenu(): Promise<SalesMenuData> {
     getProducts({ onSale: true, orderby: "date", order: "desc", perPage: 6 }),
   ]);
 
-  const categories = shopBy.map((c, i) => ({
-    slug: c.slug,
-    name: decodeEntities(c.name),
-    image: c.image?.thumbnail ?? lists[i]?.products.find((p) => p.images.length)?.images[0]?.thumbnail ?? null,
-  }));
+  // One photo per circle, never the same photo twice (some products sit in several categories).
+  const usedImgs = new Set<string>();
+  const categories = shopBy.map((c, i) => {
+    const image =
+      c.image?.thumbnail ??
+      lists[i]?.products.map((p) => p.images[0]?.thumbnail).find((t) => t && !usedImgs.has(t)) ??
+      lists[i]?.products.find((p) => p.images.length)?.images[0]?.thumbnail ??
+      null;
+    if (image) usedImgs.add(image);
+    return { slug: c.slug, name: decodeEntities(c.name), image };
+  });
 
   const products = sale.products.map((p) => {
     const r = p.prices.price_range;
