@@ -25,8 +25,10 @@ export function PageHero({
   aside?: React.ReactNode;
 }) {
   return (
-    <header className="border-b border-line bg-card/70">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-5 py-12 md:px-8 md:py-16 lg:flex-row lg:items-end lg:justify-between">
+    <header className="mx-auto max-w-[1440px] px-4 pt-6 md:px-8 md:pt-8">
+      <div className="glass-card relative isolate flex flex-col gap-5 overflow-hidden rounded-3xl px-6 py-10 md:px-10 md:py-14 lg:flex-row lg:items-end lg:justify-between">
+        {/* Soft brand-gold light inside the glass banner */}
+        <span aria-hidden className="pointer-events-none absolute -right-24 -top-24 -z-10 size-72 rounded-full bg-secondary/60 blur-3xl" />
         <div className="min-w-0">
           <h1 className={`break-words text-[40px] leading-tight md:text-[52px] ${clampTitle ? "line-clamp-2" : ""}`} title={clampTitle ? title : undefined}>
             {title}
@@ -74,10 +76,10 @@ function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
 /** Same size as PageHero, shown while a page's title is loading (prevents layout shift). */
 export function PageHeroSkeleton() {
   return (
-    <div className="border-b border-line bg-card/70" aria-hidden>
-      <div className="mx-auto max-w-[1440px] animate-pulse px-5 py-12 md:px-8 md:py-16">
-        <div className="h-[50px] w-64 rounded bg-white/70 md:h-[65px] md:w-96" />
-        <div className="mt-3 h-[22px] w-48 rounded bg-white/70" />
+    <div className="mx-auto max-w-[1440px] px-4 pt-6 md:px-8 md:pt-8" aria-hidden>
+      <div className="glass-card animate-pulse rounded-3xl px-6 py-10 md:px-10 md:py-14">
+        <div className="h-[50px] w-64 rounded-lg bg-white/70 md:h-[65px] md:w-96" />
+        <div className="mt-3 h-[22px] w-48 rounded-lg bg-white/70" />
       </div>
     </div>
   );

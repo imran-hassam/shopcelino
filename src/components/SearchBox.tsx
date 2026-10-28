@@ -109,8 +109,8 @@ export function SearchBox({ variant, onNavigate }: { variant: "desktop" | "drawe
         <label
           className={
             desktop
-              ? "flex w-[260px] items-center rounded-full border border-heading/70 px-4 py-2 transition-colors focus-within:border-primary-hover xl:w-[310px]"
-              : "flex items-center rounded-full border border-heading/70 bg-white px-4 py-2.5 transition-colors focus-within:border-primary-hover"
+              ? "glass-field flex w-[260px] items-center rounded-full px-4 py-2 xl:w-[310px]"
+              : "glass-field flex items-center rounded-full px-4 py-2.5"
           }
         >
           <span className="sr-only">Search products</span>
@@ -134,7 +134,7 @@ export function SearchBox({ variant, onNavigate }: { variant: "desktop" | "drawe
             aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
             className={`w-full bg-transparent outline-none placeholder:text-muted ${desktop ? "text-[15px]" : ""}`}
           />
-          <button type="submit" aria-label="Search">
+          <button type="submit" aria-label="Search" className="transition-colors hover:text-primary-hover">
             <Search className="size-5" strokeWidth={1.5} />
           </button>
         </label>
@@ -142,7 +142,7 @@ export function SearchBox({ variant, onNavigate }: { variant: "desktop" | "drawe
 
       {showList && (
         <div
-          className={`absolute z-[60] mt-2 overflow-hidden rounded-xl border border-line bg-white shadow-xl ${
+          className={`glass absolute z-[60] mt-3 overflow-hidden rounded-2xl !shadow-[0_30px_50px_-24px_rgba(34,32,29,.45)] ${
             desktop ? "right-0 top-full w-[min(92vw,440px)]" : "inset-x-5 top-full"
           }`}
         >
@@ -157,9 +157,9 @@ export function SearchBox({ variant, onNavigate }: { variant: "desktop" | "drawe
                     e.preventDefault();
                     go(s.href);
                   }}
-                  className={`flex items-center gap-3 px-3 py-2.5 ${i === active ? "bg-card" : ""}`}
+                  className={`mx-1.5 flex items-center gap-3 rounded-xl px-2.5 py-2 transition-colors ${i === active ? "bg-white/80 shadow-sm" : ""}`}
                 >
-                  <span className="h-16 w-12 shrink-0 overflow-hidden rounded-md bg-card">
+                  <span className="h-16 w-12 shrink-0 overflow-hidden rounded-lg bg-card ring-1 ring-white/80">
                     {s.image && <img src={s.image} alt="" loading="lazy" className="size-full object-cover object-top" />}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -174,7 +174,7 @@ export function SearchBox({ variant, onNavigate }: { variant: "desktop" | "drawe
           {loading && !items.length && <p className="px-4 py-4 text-sm text-muted">Searching…</p>}
           {!loading && !items.length && <p className="px-4 py-4 text-sm text-muted">No products found for “{term}”.</p>}
           {items.length > 0 && (
-            <button type="button" onClick={() => submit()} className="block w-full border-t border-line px-4 py-3 text-left text-sm font-semibold hover:bg-card">
+            <button type="button" onClick={() => submit()} className="block w-full border-t border-line px-4 py-3 text-left text-sm font-semibold transition-colors hover:bg-white/70 hover:text-primary-hover">
               View all results for “{term}”
             </button>
           )}

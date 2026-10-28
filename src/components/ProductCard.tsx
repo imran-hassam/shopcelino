@@ -21,7 +21,7 @@ export function ProductCard({ product, priority = false }: { product: WCProduct;
   const href = `/product/${product.slug}`;
   const sku = product.card_sku ?? product.sku;
   return (
-    <article className="group">
+    <article className="group glass-card glass-lift flex flex-col rounded-2xl p-2 sm:p-2.5">
       <div className="relative overflow-hidden rounded-xl bg-card">
         <Link href={href} className="block aspect-[3/4]" aria-label={name}>
           {img ? (
@@ -52,7 +52,7 @@ export function ProductCard({ product, priority = false }: { product: WCProduct;
           )}
         </Link>
         {badge && (
-          <span className="pointer-events-none absolute left-3 top-3 rounded bg-heading px-2 py-0.5 text-xs font-bold text-white">
+          <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-heading/85 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm ring-1 ring-white/20 backdrop-blur-sm">
             {badge}
           </span>
         )}
@@ -61,16 +61,18 @@ export function ProductCard({ product, priority = false }: { product: WCProduct;
           className="absolute right-3 top-3"
         />
         {!product.is_in_stock && (
-          <span className="absolute inset-x-3 bottom-3 rounded-full bg-white/90 py-1.5 text-center text-xs font-semibold">Out of stock</span>
+          <span className="absolute inset-x-3 bottom-3 rounded-full border border-white/70 bg-white/75 py-1.5 text-center text-xs font-semibold shadow-sm backdrop-blur-md">Out of stock</span>
         )}
       </div>
-      <Link href={href} className="mt-4 block text-[16px] leading-snug hover:text-primary-hover">
+      <div className="flex flex-1 flex-col px-1.5 pb-1.5 pt-3.5 sm:px-2">
+      <Link href={href} className="block text-[16px] leading-snug transition-colors hover:text-primary-hover">
         <h3 className="line-clamp-2 font-sans text-[16px]">{name}</h3>
       </Link>
       {sku && <p className="mt-1 truncate text-[13px] text-muted">SKU: {sku}</p>}
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-2.5">
         <Price prices={product.prices} onSale={product.on_sale} />
         {product.review_count > 0 && <Stars rating={Number(product.average_rating)} count={product.review_count} />}
+      </div>
       </div>
     </article>
   );

@@ -11,7 +11,7 @@ export function ShareLinks({ url, title, image }: { url: string; title: string; 
     <div className="mt-8 flex items-center gap-4">
       <span className="text-sm text-muted">Share:</span>
       {links.map((l) => (
-        <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" aria-label={l.label} className="transition hover:scale-110 hover:text-primary-hover">
+        <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" aria-label={l.label} className="glass-chip grid size-10 place-items-center rounded-full transition hover:scale-110 hover:border-primary hover:text-primary-hover">
           <svg viewBox="0 0 24 24" className="size-5 fill-current" aria-hidden>
             <path d={l.path} />
           </svg>

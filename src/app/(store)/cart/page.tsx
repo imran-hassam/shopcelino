@@ -37,7 +37,7 @@ export default function CartPage() {
   }
 
   if (cartLoading && !cart) {
-    return <div className="mx-auto max-w-[1440px] animate-pulse px-5 py-20 md:px-8"><div className="h-10 w-48 rounded bg-card" /><div className="mt-10 h-40 rounded bg-card" /></div>;
+    return <div className="mx-auto max-w-[1440px] animate-pulse px-4 py-14 md:px-8"><div className="glass-card rounded-3xl p-8"><div className="h-10 w-48 rounded-lg bg-white/70" /><div className="mt-10 h-40 rounded-2xl bg-white/60" /></div></div>;
   }
 
   const items = cart?.items ?? [];
@@ -45,12 +45,14 @@ export default function CartPage() {
 
   if (!items.length) {
     return (
-      <div className="mx-auto max-w-[1440px] px-5 py-28 text-center md:px-8">
+      <div className="mx-auto max-w-[1440px] px-4 py-16 text-center md:px-8 md:py-24">
+        <div className="glass-card mx-auto max-w-2xl rounded-3xl px-6 py-16">
         <h1 className="text-[40px]">Your cart is empty</h1>
         <p className="mt-3 text-muted">Find something you love and it will show up here.</p>
         <Link href="/shop" className="mt-8 inline-block rounded-full bg-heading px-8 py-3.5 font-semibold text-white transition hover:bg-primary hover:text-heading">
           Continue shopping
         </Link>
+        </div>
       </div>
     );
   }
@@ -58,16 +60,16 @@ export default function CartPage() {
   const shippingKnown = cart!.has_calculated_shipping && t!.total_shipping !== null;
 
   return (
-    <div className="mx-auto grid max-w-[1440px] gap-12 px-5 py-14 md:px-8 lg:grid-cols-[1fr_440px] lg:gap-0">
-      <section className="lg:pr-14">
-        <h1 className="border-b border-line pb-6 text-[34px]">My cart</h1>
+    <div className="mx-auto grid max-w-[1440px] items-start gap-6 px-4 py-10 md:px-8 md:py-14 lg:grid-cols-[1fr_420px] lg:gap-8">
+      <section className="glass-card rounded-3xl px-5 py-6 sm:px-8 sm:py-8">
+        <h1 className="glass-divider border-b pb-6 text-[34px]">My cart</h1>
         <ul>
           {items.map((it) => {
             const img = it.images[0];
             const busy = busyKey === it.key;
             return (
-              <li key={it.key} className={`grid grid-cols-[96px_1fr] gap-4 border-b border-line py-6 transition-opacity sm:grid-cols-[128px_1fr_auto_auto_auto] sm:items-start sm:gap-6 ${busy ? "opacity-50" : ""}`}>
-                <Link href={productPath(it.permalink)} className="overflow-hidden rounded-lg bg-card">
+              <li key={it.key} className={`glass-divider grid grid-cols-[96px_1fr] gap-4 border-b py-6 transition-opacity sm:grid-cols-[128px_1fr_auto_auto_auto] sm:items-start sm:gap-6 ${busy ? "opacity-50" : ""}`}>
+                <Link href={productPath(it.permalink)} className="overflow-hidden rounded-xl bg-card shadow-[0_8px_20px_-12px_rgba(34,32,29,.5)] ring-1 ring-white/80">
                   {img && <img src={img.thumbnail} alt={img.alt || decodeEntities(it.name)} className="aspect-[3/4] w-full object-cover object-top" />}
                 </Link>
                 <div>
@@ -77,7 +79,7 @@ export default function CartPage() {
                   ))}
                   <p className="mt-1 text-sm text-muted">{formatMoney(it.prices.price, it.prices)} each</p>
                 </div>
-                <div className="col-start-2 flex w-fit items-center rounded-lg border border-heading sm:col-start-auto">
+                <div className="glass-field col-start-2 flex w-fit items-center rounded-full px-1 sm:col-start-auto">
                   <button aria-label="Decrease quantity" disabled={busy || it.quantity <= it.quantity_limits.minimum} className="px-3.5 py-2.5 disabled:opacity-30" onClick={() => run(it.key, "update-item", { key: it.key, quantity: it.quantity - 1 })}>
                     <Minus className="size-4" />
                   </button>
@@ -95,7 +97,7 @@ export default function CartPage() {
           })}
         </ul>
 
-        <div className="border-b border-line py-6">
+        <div className="glass-divider border-b py-6">
           <button className="flex items-center gap-2 text-[17px] text-primary-hover" onClick={() => setPromoOpen((o) => !o)} aria-expanded={promoOpen}>
             <Tag className="size-5" strokeWidth={1.5} /> Enter a promo code <ChevronDown className={`size-4 transition-transform ${promoOpen ? "rotate-180" : ""}`} />
           </button>
@@ -111,13 +113,13 @@ export default function CartPage() {
                 }
               }}
             >
-              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Promo code" aria-label="Promo code" className="flex-1 rounded-lg border border-heading/40 bg-white px-4 py-2.5 outline-none focus:border-heading" />
-              <button disabled={busyKey === "coupon"} className="rounded-lg bg-heading px-5 font-semibold text-white disabled:opacity-50">Apply</button>
+              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Promo code" aria-label="Promo code" className="glass-field flex-1 rounded-full px-4 py-2.5 outline-none" />
+              <button disabled={busyKey === "coupon"} className="rounded-full bg-heading px-6 font-semibold text-white transition hover:bg-primary hover:text-heading disabled:opacity-50">Apply</button>
             </form>
           )}
           {cart!.coupons.map((c) => (
             <p key={c.code} className="mt-3 flex items-center gap-3 text-sm">
-              <span className="rounded bg-secondary px-2 py-0.5 font-semibold uppercase">{c.code}</span>
+              <span className="rounded-full bg-secondary px-3 py-0.5 font-semibold uppercase">{c.code}</span>
               <button className="underline" onClick={() => run("coupon", "remove-coupon", { code: c.code })}>Remove</button>
             </p>
           ))}
@@ -138,16 +140,16 @@ export default function CartPage() {
               rows={4}
               aria-label="Order note"
               placeholder="Instructions for your order (optional)"
-              className="mt-4 w-full max-w-xl rounded-lg border border-heading/40 bg-white px-4 py-3 outline-none focus:border-heading"
+              className="glass-field mt-4 w-full max-w-xl rounded-2xl px-4 py-3 outline-none"
             />
           )}
         </div>
       </section>
 
-      <aside className="lg:border-l lg:border-line lg:pl-12">
-        <div className="lg:sticky lg:top-32">
-          <h2 className="border-b border-line pb-6 text-[34px]">Order summary</h2>
-          <dl className="space-y-5 border-b border-line py-7 text-[17px]">
+      <aside className="self-stretch">
+        <div className="glass rounded-3xl px-6 py-7 sm:px-8 lg:sticky lg:top-32">
+          <h2 className="glass-divider border-b pb-6 text-[34px]">Order summary</h2>
+          <dl className="glass-divider space-y-5 border-b py-7 text-[17px]">
             <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatMoney(t!.total_items, t!)}</dd></div>
             {Number(t!.total_discount) > 0 && (
               <div className="flex justify-between text-primary-hover"><dt>Discount</dt><dd>−{formatMoney(t!.total_discount, t!)}</dd></div>
@@ -166,7 +168,7 @@ export default function CartPage() {
             <span className="font-display text-2xl">Total</span>
             <span className="font-display text-2xl">{formatMoney(t!.total_price, t!)}</span>
           </div>
-          <Link href="/checkout" className="block rounded-full bg-primary py-4 text-center text-[16px] font-bold text-heading transition hover:bg-primary-hover hover:text-white">
+          <Link href="/checkout" className="block rounded-full bg-primary py-4 text-center text-[16px] font-bold text-heading shadow-[0_12px_26px_-12px_rgba(155,130,21,.75)] ring-1 ring-inset ring-white/30 transition hover:bg-primary-hover hover:text-white">
             Checkout
           </Link>
           <p className="mt-5 flex items-center justify-center gap-2 text-[15px]"><Lock className="size-4" /> Secure Checkout</p>

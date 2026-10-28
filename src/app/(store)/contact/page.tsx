@@ -27,6 +27,7 @@ export default function ContactPage() {
         </Reveal>
 
         <Reveal delay={120}>
+          <div className="glass-card rounded-3xl p-6 sm:p-8">
           <h2 className="font-sans text-[26px] font-semibold">Visit Our Store</h2>
           <address className="mt-4 text-[17px] not-italic leading-relaxed">
             {CONTACT.address.map((l) => (
@@ -35,7 +36,7 @@ export default function ContactPage() {
           </address>
           <p className="mt-6 text-[17px]"><strong>Mail:</strong> <a href={`mailto:${CONTACT.email}`} className="hover:text-primary-hover">{CONTACT.email}</a></p>
           <p className="mt-2 text-[17px]"><strong>Tel:</strong> <a href={`tel:${CONTACT.phone.replace(/[^\d+]/g, "")}`} className="hover:text-primary-hover">{CONTACT.phone}</a></p>
-          <div className="mt-8 overflow-hidden rounded-xl border border-line">
+          <div className="mt-8 overflow-hidden rounded-2xl shadow-[0_20px_40px_-26px_rgba(34,32,29,.55)] ring-1 ring-white/80">
             <iframe
               title="Map showing our location"
               src={`https://maps.google.com/maps?q=${mapQuery}&z=14&output=embed`}
@@ -43,6 +44,7 @@ export default function ContactPage() {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
+          </div>
           </div>
         </Reveal>
       </div>

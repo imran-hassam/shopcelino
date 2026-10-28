@@ -18,9 +18,9 @@ export function MegaMenu({ data, onNavigate }: { data: MegaMenuData; onNavigate:
       </div>
       <ul className="mt-4 grid grid-cols-5 gap-5">
         {data.categories.map((c) => (
-          <li key={c.slug} className="group/card overflow-hidden rounded-lg border border-line bg-background transition hover:border-primary/60 hover:shadow-md">
+          <li key={c.slug} className="group/card glass-card glass-lift overflow-hidden rounded-2xl">
             <Link href={`/shop?category=${c.slug}`} className="block">
-              <span className="block aspect-[4/3] overflow-hidden bg-card">
+              <span className="block aspect-[4/3] overflow-hidden rounded-t-2xl bg-card">
                 {c.image && (
                   <img src={c.image} alt="" loading="lazy" className="size-full object-cover object-top transition duration-700 group-hover/card:scale-105" />
                 )}
@@ -32,7 +32,7 @@ export function MegaMenu({ data, onNavigate }: { data: MegaMenuData; onNavigate:
             </Link>
             <div className="flex min-h-[44px] flex-wrap gap-1.5 px-4 pb-4 pt-3">
               {c.children.map((ch) => (
-                <Link key={ch.slug} href={`/shop?category=${ch.slug}`} className="rounded-full border border-line px-2.5 py-1 text-[12px] hover:border-primary hover:text-primary-hover">
+                <Link key={ch.slug} href={`/shop?category=${ch.slug}`} className="glass-chip rounded-full px-2.5 py-1 text-[12px] transition-colors hover:border-primary hover:text-primary-hover">
                   {ch.name}
                 </Link>
               ))}
@@ -41,7 +41,7 @@ export function MegaMenu({ data, onNavigate }: { data: MegaMenuData; onNavigate:
         ))}
       </ul>
 
-      <hr className="my-7 border-line" />
+      <hr className="glass-divider my-7" />
 
       {/* Collections · From the collection · Feature */}
       <div className="grid grid-cols-[1fr_1.7fr_1.35fr] gap-8">
@@ -66,8 +66,8 @@ export function MegaMenu({ data, onNavigate }: { data: MegaMenuData; onNavigate:
           <ul className="mt-4 space-y-2.5">
             {data.products.map((p) => (
               <li key={p.slug}>
-                <Link href={`/product/${p.slug}`} className="group/row flex items-center gap-3 rounded-md bg-card p-2 pr-4 transition hover:bg-secondary/50">
-                  <span className="size-11 shrink-0 overflow-hidden rounded bg-background">
+                <Link href={`/product/${p.slug}`} className="group/row glass-card flex items-center gap-3 rounded-xl p-2 pr-4 transition hover:border-secondary hover:bg-white/80">
+                  <span className="size-11 shrink-0 overflow-hidden rounded-lg bg-background">
                     {p.image && <img src={p.image} alt="" loading="lazy" className="size-full object-cover object-top" />}
                   </span>
                   <span className="line-clamp-1 flex-1 text-[14px]">{p.name}</span>
@@ -103,7 +103,7 @@ function FeatureCard({ feature }: { feature: NonNullable<MegaMenuData["feature"]
       </span>
     </>
   );
-  const cls = "group/feat flex min-h-[200px] flex-col justify-between rounded-lg bg-footer p-6";
+  const cls = "group/feat flex min-h-[200px] flex-col justify-between rounded-2xl bg-footer p-6 shadow-[0_20px_40px_-24px_rgba(34,32,29,.7)] ring-1 ring-inset ring-footer-text/10 transition hover:-translate-y-1";
   return post ? (
     <a href={feature.href} className={cls}>{inner}</a>
   ) : (

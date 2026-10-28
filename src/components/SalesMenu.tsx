@@ -6,21 +6,21 @@ import type { SalesMenuData } from "@/lib/mega";
 /** Desktop "Today's Sales" mega menu: Shop By (left) · Today's Sales (right). */
 export function SalesMenu({ data, onNavigate }: { data: SalesMenuData | null; onNavigate: () => void }) {
   return (
-    // Left half white, right half the brand card colour, edge to edge.
+    // Frosted glass: left half white, right half the brand card colour, edge to edge.
     <div
-      className="bg-[linear-gradient(to_right,var(--white)_50%,var(--card-background)_50%)]"
+      className="sales-glass"
       onClick={(e) => (e.target as HTMLElement).closest("a") && onNavigate()}
     >
       <div className="mx-auto grid max-h-[calc(100vh-110px)] max-w-[1440px] grid-cols-2 overflow-y-auto">
         {/* Shop By */}
-        <section className="bg-white px-8 py-8 xl:px-12" aria-labelledby="shopby-h">
+        <section className="px-8 py-8 xl:px-12" aria-labelledby="shopby-h">
           <h2 id="shopby-h" className="text-center text-[28px]">Shop By</h2>
           {data ? (
             <ul className="mt-7 grid grid-cols-4 gap-x-4 gap-y-7">
               {data.categories.map((c) => (
                 <li key={c.slug}>
                   <Link href={`/shop?category=${c.slug}`} className="group/cat flex flex-col items-center text-center">
-                    <span className="block aspect-square w-full max-w-[150px] overflow-hidden rounded-full border-4 border-card bg-card transition group-hover/cat:border-secondary">
+                    <span className="block aspect-square w-full max-w-[150px] overflow-hidden rounded-full border-4 border-white/80 bg-card shadow-[0_10px_24px_-14px_rgba(34,32,29,.45)] transition group-hover/cat:border-secondary group-hover/cat:shadow-[0_16px_30px_-14px_rgba(34,32,29,.5)]">
                       {c.image && (
                         <img src={c.image} alt="" loading="lazy" className="size-full object-cover object-top transition duration-500 group-hover/cat:scale-105" />
                       )}
@@ -36,7 +36,7 @@ export function SalesMenu({ data, onNavigate }: { data: SalesMenuData | null; on
         </section>
 
         {/* Today's Sales */}
-        <section className="bg-card px-8 py-8 xl:px-12" aria-labelledby="sales-h">
+        <section className="px-8 py-8 xl:px-12" aria-labelledby="sales-h">
           <div className="relative">
             <h2 id="sales-h" className="text-center text-[28px]">Today&apos;s Sales</h2>
             <Link href="/todays-sales" className="absolute right-0 top-1/2 flex -translate-y-1/2 items-center gap-1 text-[13px] font-semibold uppercase tracking-[0.12em] hover:text-primary-hover">
@@ -48,8 +48,8 @@ export function SalesMenu({ data, onNavigate }: { data: SalesMenuData | null; on
               <ul className="mt-7 grid grid-cols-2 gap-4">
                 {data.products.map((p) => (
                   <li key={p.slug}>
-                    <Link href={`/product/${p.slug}`} className="group/p flex h-full gap-4 bg-white p-4 transition hover:shadow-md">
-                      <span className="aspect-[4/5] w-24 shrink-0 overflow-hidden bg-background xl:w-28">
+                    <Link href={`/product/${p.slug}`} className="group/p glass-card glass-lift flex h-full gap-4 rounded-2xl p-4">
+                      <span className="aspect-[4/5] w-24 shrink-0 overflow-hidden rounded-xl bg-background xl:w-28">
                         {p.image && <img src={p.image} alt="" loading="lazy" className="size-full object-cover object-top" />}
                       </span>
                       <span className="min-w-0 flex-1 py-1">
@@ -93,7 +93,7 @@ export function SalesMenuCompact({ data, onNavigate }: { data: SalesMenuData | n
         {data.categories.map((c) => (
           <li key={c.slug}>
             <Link href={`/shop?category=${c.slug}`} className="flex flex-col items-center text-center">
-              <span className="block aspect-square w-full overflow-hidden rounded-full border-2 border-card bg-card">
+              <span className="block aspect-square w-full overflow-hidden rounded-full border-2 border-white/80 bg-card shadow-sm">
                 {c.image && <img src={c.image} alt="" loading="lazy" className="size-full object-cover object-top" />}
               </span>
               <span className="mt-1.5 line-clamp-2 text-[12px] leading-tight">{c.name}</span>
@@ -105,8 +105,8 @@ export function SalesMenuCompact({ data, onNavigate }: { data: SalesMenuData | n
       <ul className="mt-3 space-y-2">
         {data.products.map((p) => (
           <li key={p.slug}>
-            <Link href={`/product/${p.slug}`} className="flex items-center gap-3 rounded-md bg-card p-2">
-              <span className="aspect-[4/5] w-12 shrink-0 overflow-hidden bg-background">
+            <Link href={`/product/${p.slug}`} className="glass-card flex items-center gap-3 rounded-xl p-2">
+              <span className="aspect-[4/5] w-12 shrink-0 overflow-hidden rounded-lg bg-background">
                 {p.image && <img src={p.image} alt="" loading="lazy" className="size-full object-cover object-top" />}
               </span>
               <span className="min-w-0 flex-1">
@@ -140,7 +140,7 @@ function Skeleton({ kind }: { kind: "circles" | "cards" }) {
   ) : (
     <div className="mt-7 grid animate-pulse grid-cols-2 gap-4" aria-hidden>
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="h-36 bg-white/70" />
+        <div key={i} className="h-36 rounded-2xl bg-white/60" />
       ))}
     </div>
   );

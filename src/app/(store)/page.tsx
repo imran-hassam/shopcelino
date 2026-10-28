@@ -77,7 +77,7 @@ async function HomeContent() {
         </div>
 
         <div className="relative order-1 mx-auto w-full max-w-[1440px] px-4 pb-6 pt-10 md:px-8 md:pt-14 lg:flex lg:h-full lg:items-center lg:py-0">
-          <div className="max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(560px,40vw)]">
+          <div className="hero-glass max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(560px,40vw)]">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-primary-hover">Women · Men · Kids</p>
               {saleCount > 0 && (
@@ -99,7 +99,7 @@ async function HomeContent() {
               </Link>
               <Link
                 href="/shop?category=new-arrival"
-                className="group inline-flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.12em] text-heading/85 hover:text-primary-hover"
+                className="group glass-chip inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold uppercase tracking-[0.12em] text-heading/85 transition-colors hover:border-primary hover:text-primary-hover"
               >
                 New Arrivals <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </Link>
@@ -109,11 +109,11 @@ async function HomeContent() {
       </section>
 
       {/* CATEGORY STRIP */}
-      <section className="border-b border-line bg-white">
-        <div className="no-scrollbar relative mx-auto flex max-w-[1440px] gap-6 overflow-x-auto px-5 py-8 md:justify-between md:px-8">
+      <section className="relative z-10 mx-auto max-w-[1440px] px-4 md:px-8 lg:-mt-8">
+        <div className="glass glass-card no-scrollbar relative flex gap-6 overflow-x-auto rounded-3xl px-5 py-7 md:justify-between md:px-8">
           {catTiles.map((c) => (
             <Link key={c.slug} href={`/shop?category=${c.slug}`} className="group flex w-24 shrink-0 flex-col items-center gap-3 text-center">
-              <span className="size-20 overflow-hidden rounded-full border border-line bg-card p-1 transition group-hover:border-primary">
+              <span className="size-20 overflow-hidden rounded-full border border-white bg-card p-1 shadow-[0_10px_22px_-14px_rgba(34,32,29,.55)] transition group-hover:-translate-y-1 group-hover:border-primary">
                 {c.product?.images[0] ? (
                   <img
                     src={c.product.images[0].thumbnail}
@@ -148,14 +148,14 @@ async function HomeContent() {
           />
         </Reveal>
         <div className="mt-10 text-center">
-          <Link href="/shop" className="inline-flex items-center gap-2 border-b border-heading pb-1 text-[15px] font-semibold hover:border-primary-hover hover:text-primary-hover">
+          <Link href="/shop" className="glass-chip inline-flex items-center gap-2 rounded-full px-7 py-3 text-[15px] font-semibold transition-colors hover:border-primary hover:text-primary-hover">
             View all products <ArrowRight className="size-4" />
           </Link>
         </div>
       </section>
 
       {/* MARQUEE */}
-      <section className="overflow-hidden border-y border-line bg-accent py-6" aria-label={SITE.tagline}>
+      <section className="overflow-hidden border-y border-white/80 bg-accent/70 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_12px_30px_-24px_rgba(34,32,29,.5)]" aria-label={SITE.tagline}>
         <div className="flex w-max animate-marquee whitespace-nowrap" aria-hidden>
           {Array.from({ length: 8 }).map((_, i) => (
             <span key={i} className="font-display flex items-center text-3xl md:text-[44px]">
@@ -176,7 +176,7 @@ async function HomeContent() {
             <Reveal key={l.slug} delay={i * 120}>
               <Link
                 href={`/shop?category=${l.slug}`}
-                className="group relative flex h-[440px] flex-col overflow-hidden rounded-2xl bg-card md:h-[520px]"
+                className="group relative flex h-[440px] flex-col overflow-hidden rounded-3xl bg-card shadow-[0_24px_50px_-28px_rgba(34,32,29,.55)] ring-1 ring-white/70 transition duration-500 hover:-translate-y-1 hover:shadow-[0_32px_60px_-28px_rgba(34,32,29,.6)] md:h-[520px]"
               >
                 {l.product?.images[0] && (
                   <img
@@ -188,12 +188,12 @@ async function HomeContent() {
                     className="absolute inset-0 size-full object-cover object-top transition duration-[1.2s] group-hover:scale-105"
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/30 to-transparent" />
-                <div className="relative p-6">
+                {/* Frosted-glass caption over the photo */}
+                <div className="glass relative m-4 rounded-2xl px-5 py-4">
                   <h3 className="text-2xl">{l.title}</h3>
                   {l.cat && <p className="mt-2 text-sm text-foreground/75">{l.cat.count} pieces</p>}
                 </div>
-                <span className="relative mt-auto m-6 w-fit rounded-full bg-heading px-5 py-2.5 text-sm font-semibold text-white transition group-hover:bg-primary group-hover:text-heading">
+                <span className="relative m-6 mt-auto w-fit rounded-full bg-heading px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(34,32,29,.6)] ring-1 ring-white/20 transition group-hover:bg-primary group-hover:text-heading">
                   Shop {l.cat ? decodeEntities(l.cat.name) : "now"}
                 </span>
               </Link>
@@ -204,12 +204,12 @@ async function HomeContent() {
 
       {/* FEATURED GRID */}
       {hero.products.length > 2 && (
-        <section className="bg-card/60">
+        <section className="border-y border-white/70 bg-card/40">
           <div className="mx-auto max-w-[1440px] px-5 py-20 md:px-8">
             <Reveal>
               <h2 className="text-center text-[34px] md:text-[44px]">Featured Pieces</h2>
             </Reveal>
-            <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-6">
+            <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-6">
               {hero.products.slice(0, 6).map((p, i) => (
                 <Reveal key={p.id} delay={(i % 6) * 80}>
                   <ProductCard product={p} />

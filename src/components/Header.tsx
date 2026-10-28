@@ -96,10 +96,13 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b border-line bg-white transition-shadow ${
-        scrolled ? "shadow-[0_4px_20px_-12px_rgba(34,32,29,.35)]" : ""
+      className={`sticky top-0 z-50 transition-shadow ${
+        scrolled ? "shadow-[0_10px_30px_-18px_rgba(34,32,29,.45)]" : ""
       }`}
     >
+      {/* Frosted-glass bar. The blur lives on this layer (not the <header>) so the fixed
+          mobile drawer below is not trapped inside a backdrop-filter container. */}
+      <div aria-hidden className={`glass pointer-events-none absolute inset-0 -z-10 border-x-0 border-t-0 !border-b-line transition-[background-color] ${scrolled ? "" : "!shadow-none"}`} />
       <div className="h-[3px] bg-heading" />
       <div className="mx-auto flex h-[68px] max-w-[1440px] items-center gap-4 px-4 md:h-[88px] md:px-8">
         <button
@@ -129,15 +132,15 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
               >
                 <NavLink
                   href={item.href}
-                  className="flex items-center gap-1.5 text-[17px] transition-colors hover:text-primary-hover"
+                  className="nav-u flex items-center gap-1.5 text-[17px] transition-colors hover:text-primary-hover"
                   activeClassName="text-primary-hover"
                 >
-                  {item.label}
+                  <span>{item.label}</span>
                   <ChevronDown className="size-4 transition-transform group-hover:rotate-180" strokeWidth={1.5} />
                 </NavLink>
                 {/* Full-width mega menu (positioned against the sticky header) */}
                 <div
-                  className={`invisible absolute inset-x-0 top-full translate-y-1 border-t border-line bg-white opacity-0 shadow-[0_24px_40px_-20px_rgba(34,32,29,.35)] transition-all duration-200 ${
+                  className={`glass invisible absolute inset-x-0 top-full translate-y-1 border-x-0 border-b-0 !border-t-line opacity-0 !shadow-[0_30px_50px_-24px_rgba(34,32,29,.4)] transition-all duration-200 ${
                     megaHidden
                       ? ""
                       : "group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
@@ -188,14 +191,14 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                       setSalesPinned(true);
                     }
                   }}
-                  className={`flex items-center gap-1.5 text-[17px] transition-colors hover:text-primary-hover ${salesShown ? "text-primary-hover" : ""}`}
+                  className={`nav-u flex items-center gap-1.5 text-[17px] transition-colors hover:text-primary-hover ${salesShown ? "text-primary-hover" : ""}`}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
                   <ChevronDown className={`size-4 transition-transform ${salesShown ? "rotate-180" : ""}`} strokeWidth={1.5} />
                 </Link>
                 <div
                   id="sales-menu"
-                  className={`absolute inset-x-0 top-full border-t border-line shadow-[0_24px_40px_-20px_rgba(34,32,29,.35)] transition-all duration-200 ${
+                  className={`absolute inset-x-0 top-full border-t border-line shadow-[0_30px_50px_-24px_rgba(34,32,29,.4)] transition-all duration-200 ${
                     salesShown ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"
                   }`}
                 >
@@ -212,26 +215,26 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
               <NavLink
                 key={item.href}
                 href={item.href}
-                className="text-[17px] transition-colors hover:text-primary-hover"
+                className="nav-u text-[17px] transition-colors hover:text-primary-hover"
                 activeClassName="text-primary-hover"
               >
-                {item.label}
+                <span>{item.label}</span>
               </NavLink>
             ),
           )}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3 md:gap-5">
+        <div className="ml-auto flex items-center gap-1.5 md:gap-3">
           <SearchBox variant="desktop" />
-          <Link href="/wishlist" aria-label={`Wishlist (${wishlist.length})`} className="relative p-1">
+          <Link href="/wishlist" aria-label={`Wishlist (${wishlist.length})`} className="icon-glass relative">
             <Heart className="size-6" strokeWidth={1.5} />
             {wishlist.length > 0 && <Badge n={wishlist.length} />}
           </Link>
-          <Link href="/cart" aria-label={`Cart (${cartCount} items)`} className="relative p-1">
+          <Link href="/cart" aria-label={`Cart (${cartCount} items)`} className="icon-glass relative">
             <ShoppingBag className="size-6" strokeWidth={1.5} />
             {cartCount > 0 && <Badge n={cartCount} />}
           </Link>
-          <a href={accountUrl} aria-label="My account" className="hidden p-1 sm:block">
+          <a href={accountUrl} aria-label="My account" className="icon-glass hidden sm:grid">
             <User className="size-6" strokeWidth={1.5} />
           </a>
         </div>
@@ -239,12 +242,12 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
 
       {/* Mobile drawer */}
       <div
-        className={`fixed inset-0 z-50 bg-heading/40 transition-opacity lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`fixed inset-0 z-50 bg-heading/35 backdrop-blur-[3px] transition-opacity lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
         onClick={() => setOpen(false)}
         aria-hidden
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[86vw] max-w-sm flex-col bg-background shadow-2xl transition-transform duration-300 lg:hidden ${
+        className={`glass fixed inset-y-0 left-0 z-50 flex w-[86vw] max-w-sm flex-col rounded-r-3xl border-l-0 !shadow-2xl transition-transform duration-300 lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Menu"

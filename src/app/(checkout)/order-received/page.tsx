@@ -27,7 +27,7 @@ type Order = {
 export default function OrderReceived({ searchParams }: PageProps<"/order-received">) {
   return (
     <div className="mx-auto max-w-3xl px-5 py-16">
-      <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-card" />}>
+      <Suspense fallback={<div className="glass-card h-96 animate-pulse rounded-3xl" />}>
         <OrderDetails searchParams={searchParams as Promise<Record<string, string | undefined>>} />
       </Suspense>
     </div>
@@ -71,7 +71,7 @@ async function OrderDetails({ searchParams }: { searchParams: Promise<Record<str
         <p className="mt-1 text-muted">A confirmation has been sent to {order.billing.email}.</p>
       </div>
 
-      <div className="mt-12 rounded-2xl bg-white p-6 shadow-sm md:p-8">
+      <div className="glass-card mt-12 rounded-3xl p-6 md:p-8">
         <ul className="divide-y divide-line">
           {order.line_items.map((li) => (
             <li key={li.id} className="flex items-center justify-between gap-4 py-4">

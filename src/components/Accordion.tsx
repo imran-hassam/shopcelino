@@ -6,9 +6,9 @@ import { useState } from "react";
 export function Accordion({ items }: { items: { title: string; html: string }[] }) {
   const [open, setOpen] = useState(0);
   return (
-    <div className="border-b border-line">
+    <div>
       {items.map((it, i) => (
-        <div key={it.title} className="border-t border-line">
+        <div key={it.title} className="glass-divider border-t first:border-t-0">
           <button
             className="flex w-full items-center justify-between py-5 text-left font-display text-xl"
             onClick={() => setOpen(open === i ? -1 : i)}

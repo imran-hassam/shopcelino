@@ -138,13 +138,13 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
           </div>
 
           {result.products.length ? (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-6 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 xl:grid-cols-3">
               {result.products.map((p, i) => (
                 <ProductCard key={p.id} product={p} priority={i < 3} />
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl bg-card px-6 py-20 text-center">
+            <div className="glass-card rounded-3xl px-6 py-20 text-center">
               <p className="font-display text-2xl">Nothing matches those filters</p>
               <p className="mt-2 text-muted">Try removing a filter or searching for something else.</p>
               <Link href="/shop" className="mt-6 inline-block rounded-full bg-heading px-7 py-3 text-sm font-semibold text-white">
@@ -200,7 +200,7 @@ function PageLink({
   label: string;
 }) {
   const cls = `grid size-11 place-items-center rounded-full text-[15px] transition ${
-    active ? "bg-heading text-white" : disabled ? "bg-card text-muted" : "hover:bg-card"
+    active ? "bg-heading text-white shadow-[0_10px_22px_-10px_rgba(34,32,29,.6)]" : disabled ? "bg-card/50 text-muted" : "glass-chip hover:border-primary hover:text-primary-hover"
   }`;
   if (disabled) return <span className={cls} aria-hidden>{children}</span>;
   return (
@@ -216,11 +216,11 @@ function ShopSkeleton() {
     <PageHeroSkeleton />
     <div className="mx-auto max-w-[1440px] animate-pulse px-5 pb-24 pt-10 md:px-8 md:pt-14">
       <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
-        <div className="hidden h-96 rounded-xl bg-card lg:block" />
+        <div className="hidden h-96 rounded-3xl bg-white/50 lg:block" />
         <div className="grid grid-cols-2 gap-6 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i}>
-              <div className="aspect-[3/4] rounded-xl bg-card" />
+              <div className="aspect-[3/4] rounded-2xl bg-white/50" />
               <div className="mt-4 h-4 w-3/4 rounded bg-card" />
               <div className="mt-2 h-4 w-1/3 rounded bg-card" />
             </div>

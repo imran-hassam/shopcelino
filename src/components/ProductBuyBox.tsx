@@ -189,12 +189,12 @@ export function ProductBuyBox({ product, variations, summary }: Props) {
                       setChosen(next);
                       setError("");
                     }}
-                    className={`min-w-12 rounded-lg border px-4 py-2 text-sm transition ${
+                    className={`min-w-12 rounded-full border px-4 py-2 text-sm transition ${
                       sel
                         ? "border-heading bg-heading text-white"
                         : avail
-                          ? "border-heading/30 bg-white hover:border-heading"
-                          : "cursor-not-allowed border-line bg-card text-muted line-through"
+                          ? "border-white bg-white/70 shadow-[0_4px_12px_-8px_rgba(34,32,29,.45)] hover:border-heading"
+                          : "cursor-not-allowed border-line bg-card/50 text-muted line-through"
                     }`}
                   >
                     {t.name}
@@ -208,7 +208,7 @@ export function ProductBuyBox({ product, variations, summary }: Props) {
       <div className="mt-7">
         <p className="mb-2 text-[15px]">Quantity</p>
         <div className="flex items-center gap-4">
-          <div className="flex items-center rounded-lg border border-heading">
+          <div className="glass-field flex items-center rounded-full px-1">
             <button type="button" aria-label="Decrease quantity" className="px-3.5 py-2.5 disabled:opacity-30" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))}>
               <Minus className="size-4" />
             </button>
@@ -237,20 +237,20 @@ export function ProductBuyBox({ product, variations, summary }: Props) {
           type="button"
           onClick={() => submit("add")}
           disabled={!inStock || !product.is_purchasable || busy !== null}
-          className="flex-1 rounded-full bg-primary py-3.5 text-[15px] font-bold text-heading transition hover:bg-primary-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 rounded-full bg-primary py-3.5 text-[15px] font-bold text-heading shadow-[0_12px_26px_-12px_rgba(155,130,21,.75)] ring-1 ring-inset ring-white/30 transition hover:bg-primary-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy === "add" ? "Adding…" : "Add to Cart"}
         </button>
         <WishButton
           item={{ id: product.id, slug: product.slug, name: product.name, image: product.image, price: product.prices.price, sku }}
-          className="size-[52px] border border-heading/30 !bg-white"
+          className="size-[52px] !border-white !bg-white/80"
         />
       </div>
       <button
         type="button"
         onClick={() => submit("buy")}
         disabled={!inStock || !product.is_purchasable || busy !== null}
-        className="mt-3 w-full rounded-full bg-heading py-3.5 text-[15px] font-bold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-3 w-full rounded-full bg-heading py-3.5 text-[15px] font-bold text-white shadow-[0_12px_26px_-12px_rgba(34,32,29,.7)] ring-1 ring-inset ring-white/10 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
       >
         {busy === "buy" ? "Please wait…" : "Buy Now"}
       </button>

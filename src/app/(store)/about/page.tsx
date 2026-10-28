@@ -78,7 +78,7 @@ async function AboutContent() {
           {stats.length > 0 && (
             <div className="mt-10 grid gap-5 sm:grid-cols-2">
               {stats.map((s) => (
-                <div key={s.label} className="rounded-2xl border border-line bg-white p-7 shadow-sm">
+                <div key={s.label} className="glass-card glass-lift rounded-3xl p-7">
                   <p className="font-display text-[40px] leading-none text-primary-hover">{s.value}</p>
                   <p className="mt-4 text-[17px] font-semibold">{s.label}</p>
                   <p className="mt-2 text-[15px] text-muted">{s.note}</p>
@@ -133,7 +133,7 @@ async function AboutContent() {
       {banner.length >= 2 && (
         <section className="mx-auto max-w-[1440px] px-5 pt-16 md:px-8 md:pt-20">
           <Reveal>
-            <div className={`grid grid-cols-2 overflow-hidden rounded-2xl bg-card ${banner.length >= 4 ? "md:grid-cols-4" : ""}`}>
+            <div className={`grid grid-cols-2 overflow-hidden rounded-3xl bg-card shadow-[0_30px_60px_-36px_rgba(34,32,29,.55)] ring-1 ring-white/80 ${banner.length >= 4 ? "md:grid-cols-4" : ""}`}>
               {banner.map((p, i) => (
                 <Link
                   key={p.id}
@@ -158,7 +158,8 @@ async function AboutContent() {
       {/* CTA */}
       <section className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 md:px-8">
         <Reveal>
-          <div className="flex flex-col items-start justify-between gap-8 rounded-2xl bg-footer px-7 py-10 text-footer-text md:flex-row md:items-center md:px-12 md:py-14">
+          <div className="relative isolate flex flex-col items-start justify-between gap-8 overflow-hidden rounded-3xl bg-footer px-7 py-10 text-footer-text shadow-[0_30px_60px_-30px_rgba(34,32,29,.7)] ring-1 ring-inset ring-footer-text/10 md:flex-row md:items-center md:px-12 md:py-14">
+            <span aria-hidden className="pointer-events-none absolute -right-20 -top-24 -z-10 size-80 rounded-full bg-primary/15 blur-3xl" />
             <div>
               <h2 className="text-[30px] leading-tight !text-footer-text md:text-[38px]">Find your next favourite piece</h2>
               <p className="mt-3 max-w-xl text-[17px] text-footer-text/75">
@@ -167,7 +168,7 @@ async function AboutContent() {
             </div>
             <Link
               href="/shop"
-              className="group inline-flex shrink-0 items-center gap-4 rounded-full bg-primary py-2 pl-7 pr-2 text-[16px] font-bold text-heading transition hover:bg-secondary"
+              className="group inline-flex shrink-0 items-center gap-4 rounded-full bg-primary py-2 pl-7 pr-2 text-[16px] font-bold text-heading shadow-[0_12px_26px_-12px_rgba(198,172,24,.6)] ring-1 ring-inset ring-white/30 transition hover:bg-secondary"
             >
               Shop Now
               <span className="grid size-10 place-items-center rounded-full bg-heading text-white transition-transform group-hover:rotate-45">
@@ -182,10 +183,10 @@ async function AboutContent() {
 }
 
 function CollageImage({ product, className = "" }: { product: WCProduct | null; className?: string }) {
-  if (!product) return <div className={`rounded-2xl bg-card ${className}`} />;
+  if (!product) return <div className={`rounded-3xl bg-card ${className}`} />;
   const img = product.images[0];
   return (
-    <Link href={`/product/${product.slug}`} className={`group block overflow-hidden rounded-2xl bg-card ${className}`}>
+    <Link href={`/product/${product.slug}`} className={`group block overflow-hidden rounded-3xl bg-card shadow-[0_24px_50px_-30px_rgba(34,32,29,.55)] ring-1 ring-white/80 ${className}`}>
       <img
         src={img.src}
         srcSet={img.srcset}

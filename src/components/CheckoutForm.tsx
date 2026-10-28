@@ -83,13 +83,15 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ship.country, ship.state, ship.postcode, ship.city, billSame, bill.country, bill.state]);
 
-  if (cartLoading && !cart) return <div className="mx-auto max-w-6xl animate-pulse px-5 py-16"><div className="h-[600px] rounded-xl bg-card" /></div>;
+  if (cartLoading && !cart) return <div className="mx-auto max-w-6xl animate-pulse px-4 py-10 md:px-8"><div className="glass-card h-[600px] rounded-3xl" /></div>;
 
   if (!cart?.items.length) {
     return (
-      <div className="px-5 py-28 text-center">
-        <h1 className="text-[36px]">Your cart is empty</h1>
-        <Link href="/shop" className="mt-8 inline-block rounded-full bg-heading px-8 py-3.5 font-semibold text-white">Continue shopping</Link>
+      <div className="px-4 py-16 text-center md:py-24">
+        <div className="glass-card mx-auto max-w-2xl rounded-3xl px-6 py-16">
+          <h1 className="text-[36px]">Your cart is empty</h1>
+          <Link href="/shop" className="mt-8 inline-block rounded-full bg-heading px-8 py-3.5 font-semibold text-white transition hover:bg-primary hover:text-heading">Continue shopping</Link>
+        </div>
       </div>
     );
   }
@@ -148,9 +150,9 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
   }
 
   return (
-    <form onSubmit={placeOrder} className="mx-auto grid max-w-[1440px] lg:grid-cols-[1fr_minmax(420px,0.85fr)]">
+    <form onSubmit={placeOrder} className="mx-auto grid max-w-[1440px] gap-6 px-4 py-8 md:px-8 md:py-10 lg:grid-cols-[1fr_minmax(420px,0.85fr)] lg:gap-8">
       {/* LEFT: details */}
-      <div className="order-2 px-5 py-10 md:px-16 lg:order-1 lg:border-r lg:border-line">
+      <div className="glass-card order-2 rounded-3xl px-5 py-8 sm:px-8 md:px-12 md:py-10 lg:order-1">
         <div className="mx-auto max-w-[800px]">
           <Section title="Contact information" aside={<a href={accountUrl} className="text-[15px] text-muted">Have an account? <span className="text-foreground underline">Log in</span></a>}>
             <Field label="Email">
@@ -169,13 +171,13 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
           {cart.needs_shipping && (
             <Section title="Shipping method">
               {rates.length === 0 ? (
-                <p className="rounded-lg border border-line bg-white p-4 text-[15px] text-muted">
+                <p className="rounded-2xl border border-white bg-white/60 p-4 text-[15px] text-muted">
                   {updating ? "Checking delivery options…" : "Enter your address to see delivery options."}
                 </p>
               ) : (
                 <div className="space-y-2">
                   {rates.map((r) => (
-                    <label key={r.rate_id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${r.selected ? "border-heading bg-accent/50" : "border-line bg-white"}`}>
+                    <label key={r.rate_id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${r.selected ? "border-heading bg-accent/60" : "border-white bg-white/60 hover:border-secondary"}`}>
                       <input
                         type="radio"
                         name="shipping"
@@ -198,7 +200,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
           {cart.needs_payment && (
             <Section title="Payment" sub="All transactions are secure and encrypted.">
               {methods.length === 0 && (
-                <p className="rounded-lg border border-line bg-white p-4 text-[15px]">
+                <p className="rounded-2xl border border-white bg-white/60 p-4 text-[15px]">
                   Online payment isn&apos;t available right now. Please contact us to complete your order.
                 </p>
               )}
@@ -206,7 +208,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
                 {methods.map((m) => {
                   const ok = OFFLINE_METHODS.has(m.id);
                   return (
-                    <label key={m.id} className={`block rounded-lg border p-4 transition ${payment === m.id ? "border-heading bg-accent/50" : "border-line bg-white"} ${ok ? "cursor-pointer" : "opacity-60"}`}>
+                    <label key={m.id} className={`block rounded-2xl border p-4 transition ${payment === m.id ? "border-heading bg-accent/60" : "border-white bg-white/60 hover:border-secondary"} ${ok ? "cursor-pointer" : "opacity-60"}`}>
                       <span className="flex items-center gap-3">
                         <input type="radio" name="payment" disabled={!ok} checked={payment === m.id} onChange={() => setPayment(m.id)} className="accent-heading" />
                         <span className="text-[16px]">{m.title}</span>
@@ -223,7 +225,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
           <Section title="Billing address">
             <div className="space-y-2">
               {[true, false].map((same) => (
-                <label key={String(same)} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 ${billSame === same ? "border-heading bg-accent/50" : "border-line bg-white"}`}>
+                <label key={String(same)} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${billSame === same ? "border-heading bg-accent/60" : "border-white bg-white/60 hover:border-secondary"}`}>
                   <input type="radio" name="billing" checked={billSame === same} onChange={() => setBillSame(same)} className="accent-heading" />
                   {same ? "Same as shipping address" : "Use a different billing address"}
                 </label>
@@ -236,12 +238,12 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
             )}
           </Section>
 
-          {error && <p role="alert" className="mt-6 rounded-lg bg-[#7a2a1d]/10 p-4 text-[15px] text-[#7a2a1d]">{error}</p>}
+          {error && <p role="alert" className="mt-6 rounded-2xl bg-[#7a2a1d]/10 p-4 text-[15px] text-[#7a2a1d]">{error}</p>}
 
           <button
             type="submit"
             disabled={placing || updating}
-            className="mt-8 w-full rounded-lg bg-heading py-4 text-[16px] font-bold text-white transition hover:bg-black disabled:opacity-60"
+            className="mt-8 w-full rounded-full bg-heading py-4 text-[16px] font-bold text-white shadow-[0_12px_26px_-12px_rgba(34,32,29,.7)] ring-1 ring-inset ring-white/10 transition hover:bg-black disabled:opacity-60"
           >
             {placing ? "Placing order…" : cart.needs_payment ? `Pay now · ${formatMoney(t.total_price, t)}` : "Place order"}
           </button>
@@ -250,7 +252,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
       </div>
 
       {/* RIGHT: summary */}
-      <aside className="order-1 bg-card/70 px-5 py-8 md:px-16 lg:order-2 lg:py-10">
+      <aside className="glass order-1 self-start rounded-3xl px-5 py-6 sm:px-8 lg:sticky lg:top-32 lg:order-2 lg:py-10">
         <details className="group lg:hidden" open={false}>
           <summary className="flex cursor-pointer list-none items-center justify-between text-[16px]">
             <span className="flex items-center gap-2">Order summary <ChevronDown className="size-4 transition-transform group-open:rotate-180" /></span>
@@ -258,7 +260,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
           </summary>
           <div className="mt-6">{summary()}</div>
         </details>
-        <div className="hidden lg:sticky lg:top-32 lg:block">
+        <div className="hidden lg:block">
           <h2 className="mb-7 text-[26px]">Order summary</h2>
           {summary()}
         </div>
@@ -273,7 +275,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
           {cart!.items.map((it) => (
             <li key={it.key} className="flex items-center gap-4">
               <span className="relative w-16 shrink-0">
-                {it.images[0] && <img src={it.images[0].thumbnail} alt="" className="aspect-[3/4] w-full rounded-lg bg-white object-cover object-top" />}
+                {it.images[0] && <img src={it.images[0].thumbnail} alt="" className="aspect-[3/4] w-full rounded-xl bg-white object-cover object-top shadow-[0_6px_14px_-8px_rgba(34,32,29,.45)] ring-1 ring-white/80" />}
                 <span className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-muted text-[11px] font-bold text-white">{it.quantity}</span>
               </span>
               <span className="flex-1 text-[15px]">
@@ -290,7 +292,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
             onChange={(e) => setCode(e.target.value)}
             placeholder="Discount code"
             aria-label="Discount code"
-            className="flex-1 rounded-l-lg border border-line bg-white px-4 py-3 outline-none focus:border-heading"
+            className="glass-field flex-1 rounded-l-full px-4 py-3 outline-none"
           />
           <button
             type="button"
@@ -301,7 +303,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
               if (ok) setCode("");
               else setCouponMsg(decodeEntities(((data as { message?: string })?.message ?? "Invalid code").replace(/<[^>]*>/g, "")));
             }}
-            className="rounded-r-lg bg-heading px-5 font-semibold text-white transition disabled:bg-muted/40"
+            className="rounded-r-full bg-heading px-5 font-semibold text-white transition disabled:bg-muted/40"
           >
             Apply
           </button>
@@ -309,11 +311,11 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
         {couponMsg && <p className="mt-2 text-sm text-[#7a2a1d]">{couponMsg}</p>}
         {cart!.coupons.map((c) => (
           <p key={c.code} className="mt-3 flex items-center gap-3 text-sm">
-            <span className="rounded bg-secondary px-2 py-0.5 font-semibold uppercase">{c.code}</span>
+            <span className="rounded-full bg-secondary px-3 py-0.5 font-semibold uppercase">{c.code}</span>
             <button type="button" className="underline" onClick={() => cartAction("remove-coupon", { code: c.code })}>Remove</button>
           </p>
         ))}
-        <dl className="mt-6 space-y-3 border-b border-line pb-6 text-[15px]">
+        <dl className="glass-divider mt-6 space-y-3 border-b pb-6 text-[15px]">
           <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatMoney(t.total_items, t)}</dd></div>
           {Number(t.total_discount) > 0 && <div className="flex justify-between"><dt>Discount</dt><dd>−{formatMoney(t.total_discount, t)}</dd></div>}
           {cart!.needs_shipping && (
@@ -335,7 +337,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
 }
 
 const inputCls =
-  "w-full rounded-md border border-heading/25 bg-white px-4 py-3 text-[16px] outline-none transition placeholder:text-muted focus:border-heading";
+  "glass-field w-full rounded-xl px-4 py-3 text-[16px] outline-none placeholder:text-muted";
 
 function Section({ title, sub, aside, children }: { title: string; sub?: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (

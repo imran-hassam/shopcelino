@@ -35,7 +35,7 @@ export function ProductGallery({ images, name }: { images: WCImage[]; name: stri
     <div className="lg:sticky lg:top-28 lg:self-start">
       {/* Desktop: hover-zoom main image */}
       <div
-        className="relative hidden aspect-[4/5] cursor-zoom-in overflow-hidden rounded-2xl bg-card md:block"
+        className="relative hidden aspect-[4/5] cursor-zoom-in overflow-hidden rounded-3xl bg-card shadow-[0_30px_60px_-34px_rgba(34,32,29,.55)] ring-1 ring-white/80 md:block"
         onMouseMove={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
@@ -57,7 +57,7 @@ export function ProductGallery({ images, name }: { images: WCImage[]; name: stri
       {/* Mobile: swipeable */}
       <div
         ref={stripRef}
-        className="no-scrollbar relative flex snap-x snap-mandatory overflow-x-auto rounded-2xl md:hidden"
+        className="no-scrollbar relative flex snap-x snap-mandatory overflow-x-auto rounded-3xl shadow-[0_24px_50px_-30px_rgba(34,32,29,.55)] ring-1 ring-white/80 md:hidden"
         onScroll={(e) => {
           const el = e.currentTarget;
           const i = Math.round(el.scrollLeft / el.clientWidth);
@@ -78,15 +78,15 @@ export function ProductGallery({ images, name }: { images: WCImage[]; name: stri
       </div>
 
       {images.length > 1 && (
-        <div className="no-scrollbar relative mt-4 flex gap-3 overflow-x-auto pb-1">
+        <div className="no-scrollbar relative -mx-1 mt-4 flex gap-3 overflow-x-auto px-1 pb-3 pt-1">
           {images.map((im, i) => (
             <button
               key={im.id}
               onClick={() => setActive(i)}
               aria-label={`Show photo ${i + 1}`}
               aria-current={i === active}
-              className={`w-20 shrink-0 overflow-hidden rounded-lg border-2 transition md:w-24 ${
-                i === active ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"
+              className={`w-20 shrink-0 overflow-hidden rounded-xl border-2 shadow-[0_6px_14px_-8px_rgba(34,32,29,.45)] transition md:w-24 ${
+                i === active ? "border-primary" : "border-white/80 opacity-75 hover:opacity-100"
               }`}
             >
               <img src={im.thumbnail} alt="" loading="lazy" className="aspect-[3/4] w-full bg-card object-cover object-top" />

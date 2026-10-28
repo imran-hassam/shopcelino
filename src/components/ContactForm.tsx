@@ -9,11 +9,11 @@ import { useState } from "react";
 export function ContactForm({ to }: { to: string }) {
   const [sent, setSent] = useState(false);
   const field =
-    "w-full rounded-lg border border-heading/20 bg-background px-4 py-3 text-[16px] outline-none transition placeholder:text-muted hover:border-heading/40 focus:border-primary-hover focus:bg-white";
+    "glass-field w-full rounded-xl px-4 py-3 text-[16px] outline-none placeholder:text-muted";
   const label = "mb-2 block text-[15px] font-medium";
   return (
     <form
-      className="rounded-2xl border border-line bg-white p-6 shadow-sm sm:p-8"
+      className="glass-card rounded-3xl p-6 sm:p-8"
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
@@ -44,7 +44,7 @@ export function ContactForm({ to }: { to: string }) {
         </label>
       </div>
 
-      <button className="mt-7 w-full rounded-full bg-heading px-12 py-3.5 text-[16px] font-bold text-white transition hover:bg-primary hover:text-heading sm:w-auto">
+      <button className="mt-7 w-full rounded-full bg-heading px-12 py-3.5 text-[16px] font-bold text-white shadow-[0_12px_26px_-12px_rgba(34,32,29,.7)] transition hover:bg-primary hover:text-heading sm:w-auto">
         Submit
       </button>
       {sent && <p className="mt-4 text-sm" role="status">Your email app should open with your message ready to send.</p>}

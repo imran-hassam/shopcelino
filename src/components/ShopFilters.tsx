@@ -53,7 +53,7 @@ export function ShopFilters({ categories }: { categories: Cat[] }) {
       </div>
 
       {sp.get("q") && (
-        <div className="mb-4 flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm">
+        <div className="glass-chip mb-4 flex items-center justify-between rounded-full px-4 py-2 text-sm">
           <span>Search: “{sp.get("q")}”</span>
           <button onClick={() => go({ q: null })} aria-label="Clear search"><X className="size-4" /></button>
         </div>
@@ -101,10 +101,10 @@ export function ShopFilters({ categories }: { categories: Cat[] }) {
             go({ min: String(f.get("min") ?? ""), max: String(f.get("max") ?? "") });
           }}
         >
-          <input name="min" defaultValue={min} inputMode="numeric" placeholder="Min $" aria-label="Minimum price" className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" />
+          <input name="min" defaultValue={min} inputMode="numeric" placeholder="Min $" aria-label="Minimum price" className="glass-field w-full rounded-xl px-3 py-2 text-sm outline-none" />
           <span className="text-muted">–</span>
-          <input name="max" defaultValue={max} inputMode="numeric" placeholder="Max $" aria-label="Maximum price" className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm" />
-          <button className="rounded-lg bg-heading px-3 py-2 text-sm font-semibold text-white">Go</button>
+          <input name="max" defaultValue={max} inputMode="numeric" placeholder="Max $" aria-label="Maximum price" className="glass-field w-full rounded-xl px-3 py-2 text-sm outline-none" />
+          <button className="rounded-xl bg-heading px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-primary hover:text-heading">Go</button>
         </form>
       </Section>
 
@@ -126,22 +126,22 @@ export function ShopFilters({ categories }: { categories: Cat[] }) {
       <div className="lg:hidden">
         <button
           onClick={() => setMobileOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-heading py-3 font-semibold"
+          className="glass-chip flex w-full items-center justify-center gap-2 rounded-full py-3 font-semibold"
         >
           <SlidersHorizontal className="size-4" /> Filters {activeCount > 0 && `(${activeCount})`}
         </button>
       </div>
-      <aside className="hidden lg:block">{panel}</aside>
+      <aside className="glass-card hidden self-start rounded-3xl p-6 lg:block">{panel}</aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-[55] lg:hidden" role="dialog" aria-modal="true" aria-label="Filters">
-          <div className="absolute inset-0 bg-heading/40" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 right-0 w-[88vw] max-w-sm overflow-y-auto bg-background p-6 shadow-2xl">
+          <div className="absolute inset-0 bg-heading/35 backdrop-blur-[3px]" onClick={() => setMobileOpen(false)} />
+          <div className="glass absolute inset-y-0 right-0 w-[88vw] max-w-sm overflow-y-auto rounded-l-3xl border-r-0 p-6 !shadow-2xl">
             <button onClick={() => setMobileOpen(false)} aria-label="Close filters" className="absolute right-4 top-5">
               <X className="size-6" strokeWidth={1.5} />
             </button>
             {panel}
-            <button onClick={() => setMobileOpen(false)} className="mt-8 w-full rounded-full bg-heading py-3 font-semibold text-white">
+            <button onClick={() => setMobileOpen(false)} className="mt-8 w-full rounded-full bg-heading py-3 font-semibold text-white shadow-[0_10px_24px_-12px_rgba(34,32,29,.6)]">
               Show results
             </button>
           </div>
@@ -154,7 +154,7 @@ export function ShopFilters({ categories }: { categories: Cat[] }) {
 function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-t border-line py-5">
+    <div className="glass-divider border-t py-5">
       <button className="flex w-full items-center justify-between text-[17px] font-semibold" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         {title}
         {open ? <Minus className="size-4" /> : <Plus className="size-4" />}

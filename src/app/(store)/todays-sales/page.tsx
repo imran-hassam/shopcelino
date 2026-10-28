@@ -38,7 +38,7 @@ async function SalesContent({ searchParams }: { searchParams: Promise<Record<str
           {result.total ? `Showing ${from}–${to} of ${result.total} products on sale` : "No products are on sale right now."}
         </p>
         {result.products.length > 0 && (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-4">
             {result.products.map((p, i) => (
               <ProductCard key={p.id} product={p} priority={i < 4} />
             ))}
@@ -73,7 +73,7 @@ function pagesToShow(cur: number, total: number): (number | "…")[] {
 }
 
 function PageLink({ href, children, active, disabled, label }: { href: string; children: React.ReactNode; active?: boolean; disabled?: boolean; label: string }) {
-  const cls = `grid size-11 place-items-center rounded-full text-[15px] transition ${active ? "bg-heading text-white" : disabled ? "bg-card text-muted" : "hover:bg-card"}`;
+  const cls = `grid size-11 place-items-center rounded-full text-[15px] transition ${active ? "bg-heading text-white shadow-[0_10px_22px_-10px_rgba(34,32,29,.6)]" : disabled ? "bg-card/50 text-muted" : "glass-chip hover:border-primary hover:text-primary-hover"}`;
   if (disabled) return <span className={cls} aria-hidden>{children}</span>;
   return (
     <Link href={href} className={cls} aria-label={label} aria-current={active ? "page" : undefined}>
@@ -89,7 +89,7 @@ function SalesSkeleton() {
       <div className="mx-auto grid max-w-[1440px] animate-pulse grid-cols-2 gap-6 px-5 pb-24 pt-10 md:grid-cols-3 md:px-8 md:pt-14 xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i}>
-            <div className="aspect-[3/4] rounded-xl bg-card" />
+            <div className="aspect-[3/4] rounded-2xl bg-white/50" />
             <div className="mt-4 h-4 w-3/4 rounded bg-card" />
           </div>
         ))}

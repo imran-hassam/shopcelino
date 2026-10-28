@@ -6,7 +6,7 @@ export function Tabs({ tabs }: { tabs: { label: string; content: React.ReactNode
   const [active, setActive] = useState(0);
   return (
     <div>
-      <div role="tablist" className="mx-auto flex w-fit rounded-full bg-card p-1.5">
+      <div role="tablist" className="glass-chip mx-auto flex w-fit rounded-full p-1.5">
         {tabs.map((t, i) => (
           <button
             key={t.label}
@@ -14,7 +14,7 @@ export function Tabs({ tabs }: { tabs: { label: string; content: React.ReactNode
             aria-selected={active === i}
             onClick={() => setActive(i)}
             className={`rounded-full px-6 py-2.5 text-[15px] transition-all ${
-              active === i ? "bg-white shadow-sm" : "text-foreground/70 hover:text-foreground"
+              active === i ? "bg-white shadow-[0_6px_16px_-8px_rgba(34,32,29,.4)]" : "text-foreground/70 hover:bg-white/50 hover:text-foreground"
             }`}
           >
             {t.label}

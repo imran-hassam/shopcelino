@@ -16,7 +16,7 @@ export function SortSelect({ value }: { value: string }) {
   const pathname = usePathname();
   const sp = useSearchParams();
   return (
-    <label className="flex items-center gap-2 rounded-lg border border-heading/70 bg-white px-3 py-2 text-[15px]">
+    <label className="glass-field flex items-center gap-2 rounded-full px-4 py-2 text-[15px]">
       <span className="text-muted">Sort by:</span>
       <select
         value={value}
