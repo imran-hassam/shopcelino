@@ -140,7 +140,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                 </NavLink>
                 {/* Full-width mega menu (positioned against the sticky header) */}
                 <div
-                  className={`glass invisible absolute inset-x-0 top-full translate-y-1 border-x-0 border-b-0 !border-t-line opacity-0 !shadow-[0_30px_50px_-24px_rgba(34,32,29,.4)] transition-all duration-200 ${
+                  className={`glass glass-menu invisible absolute inset-x-0 top-full translate-y-1 border-x-0 border-b-0 !border-t-line opacity-0 !shadow-[0_30px_50px_-24px_rgba(34,32,29,.4)] transition-all duration-200 ${
                     megaHidden
                       ? ""
                       : "group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
