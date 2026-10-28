@@ -106,8 +106,9 @@ h1, h2, h3, .font-display { font-family: var(--font-marcellus), Georgia, serif; 
    ========================================================================== */
 :root {
   --glass-fill: color-mix(in srgb, var(--white) 58%, transparent);
-  --glass-fill-strong: color-mix(in srgb, var(--white) 76%, transparent);
-  --glass-fill-warm: color-mix(in srgb, var(--card-background) 62%, transparent);
+  /* Floating surfaces stay light over any content (incl. the dark footer). */
+  --glass-fill-strong: color-mix(in srgb, var(--white) 86%, transparent);
+  --glass-fill-warm: color-mix(in srgb, var(--card-background) 90%, transparent);
   --glass-edge: color-mix(in srgb, var(--white) 80%, transparent);
   --glass-rim: color-mix(in srgb, var(--secondary-color) 70%, transparent);
   --glass-shadow:

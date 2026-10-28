@@ -77,7 +77,7 @@ async function HomeContent() {
         </div>
 
         <div className="relative order-1 mx-auto w-full max-w-[1440px] px-4 pb-6 pt-10 md:px-8 md:pt-14 lg:flex lg:h-full lg:items-center lg:py-0">
-          <div className="hero-glass max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(560px,40vw)]">
+          <div className="hero-glass max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(600px,42vw)] xl:max-w-[min(640px,42vw)]">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-primary-hover">Women · Men · Kids</p>
               {saleCount > 0 && (

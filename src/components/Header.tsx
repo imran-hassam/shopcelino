@@ -117,7 +117,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
           <Logo src={logoUrl} className="h-9 md:h-11" />
         </Link>
 
-        <nav className="ml-10 hidden items-center gap-10 self-stretch lg:flex" aria-label="Main">
+        <nav className="ml-6 hidden items-center gap-7 self-stretch lg:flex xl:ml-10 xl:gap-10" aria-label="Main">
           {NAV.map((item) =>
             item.dropdown ? (
               <div
