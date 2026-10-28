@@ -150,7 +150,7 @@ export function CheckoutForm({ countries, gateways, accountUrl }: { countries: C
   }
 
   return (
-    <form onSubmit={placeOrder} className="mx-auto grid max-w-[1440px] gap-6 px-4 py-8 md:px-8 md:py-10 lg:grid-cols-[1fr_minmax(420px,0.85fr)] lg:gap-8">
+    <form onSubmit={placeOrder} className="mx-auto grid max-w-[1440px] gap-6 px-4 py-8 md:px-8 md:py-10 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.85fr)] lg:gap-8">
       {/* LEFT: details */}
       <div className="glass-card order-2 rounded-3xl px-5 py-8 sm:px-8 md:px-12 md:py-10 lg:order-1">
         <div className="mx-auto max-w-[800px]">

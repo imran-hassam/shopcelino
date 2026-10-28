@@ -81,7 +81,7 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
       <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-8 md:px-8 md:pt-12">
-      <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14">
         <ProductGallery images={product.images} name={name} />
 
         <div>

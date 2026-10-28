@@ -126,7 +126,7 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
 
       <div className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 md:px-8 md:pt-14">
 
-      <div className="grid gap-10 lg:grid-cols-[300px_1fr] lg:gap-8">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8">
         <ShopFilters categories={filterCats} />
 
         <section aria-label="Products">

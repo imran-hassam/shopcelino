@@ -21,7 +21,7 @@ export default function ContactPage() {
     />
     <div className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 md:px-8 md:pt-14">
 
-      <div className="grid gap-12 lg:grid-cols-2 lg:gap-14">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-14">
         <Reveal>
           <ContactForm to={CONTACT.email} />
         </Reveal>

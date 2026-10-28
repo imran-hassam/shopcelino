@@ -60,7 +60,7 @@ export default function CartPage() {
   const shippingKnown = cart!.has_calculated_shipping && t!.total_shipping !== null;
 
   return (
-    <div className="mx-auto grid max-w-[1440px] items-start gap-6 px-4 py-10 md:px-8 md:py-14 lg:grid-cols-[1fr_420px] lg:gap-8">
+    <div className="mx-auto grid max-w-[1440px] items-start gap-6 px-4 py-10 md:px-8 md:py-14 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-8">
       <section className="glass-card rounded-3xl px-5 py-6 sm:px-8 sm:py-8">
         <h1 className="glass-divider border-b pb-6 text-[34px]">My cart</h1>
         <ul>
