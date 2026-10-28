@@ -93,7 +93,7 @@ async function HomeContent() {
             <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link
                 href="/shop"
-                className="inline-flex items-center bg-heading px-8 py-4 text-[14px] font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-primary hover:text-heading"
+                className="inline-flex items-center rounded-full bg-heading px-8 py-4 text-[14px] font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-primary hover:text-heading"
               >
                 Shop Now
               </Link>
