@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronDown, Heart, Menu, ShoppingBag, User, X } from "lucide-react";
 import { MENU_CATEGORIES } from "@/lib/config";
 import { useStore } from "./StoreProvider";
@@ -41,6 +42,14 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
   const menuCats = mega?.menu ?? MENU_CATEGORIES;
   // Hide right after a click inside it, until the pointer leaves the Shop item.
   const [megaHidden, setMegaHidden] = useState(false);
+  const shopRef = useRef<HTMLDivElement>(null);
+  /** Close the Shop mega menu: hide it until the pointer leaves, and drop focus from inside it
+   *  (a clicked link keeps focus, and the menu also opens on focus, so it would stay open). */
+  function closeMega() {
+    setMegaHidden(true);
+    const a = document.activeElement;
+    if (a instanceof HTMLElement && shopRef.current?.contains(a)) a.blur();
+  }
 
   // "Today's Sales" mega menu: opens on hover or click (touch), closes on Escape / outside click.
   const [sales, setSales] = useState<SalesMenuData | null>(null);
@@ -66,6 +75,19 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
     setSalesHover(false);
     setSalesPinned(false);
   }
+  // Escape closes the Shop mega menu (it opens on hover/focus).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = shopRef.current;
+      if (e.key !== "Escape" || !el || !el.matches(":hover, :focus-within")) return;
+      setMegaHidden(true);
+      // Keyboard users go back to the Shop link (the menu stays closed until focus comes in from outside).
+      if (el.contains(document.activeElement)) el.querySelector<HTMLElement>("a")?.focus({ preventScroll: true });
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     if (!salesShown) return;
     const onKey = (e: KeyboardEvent) => {
@@ -124,13 +146,23 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
             item.dropdown ? (
               <div
                 key={item.href}
+                ref={shopRef}
                 className="group flex self-stretch"
                 onMouseEnter={() => {
                   loadMega();
                   setMegaHidden(false);
+                  closeSales();
                 }}
-                onFocus={loadMega}
+                onFocus={(e) => {
+                  loadMega();
+                  // Re-opens for focus arriving from outside (e.g. Tab), not for focus moving within.
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setMegaHidden(false);
+                }}
                 onMouseLeave={() => setMegaHidden(false)}
+                // Any link here (the Shop link itself, the mega menu, or its loading fallback) closes the menu.
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("a")) closeMega();
+                }}
               >
                 <NavLink
                   href={item.href}
@@ -151,10 +183,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                   {mega ? (
                     <MegaMenu
                       data={mega}
-                      onNavigate={() => {
-                        setMegaHidden(true);
-                        (document.activeElement as HTMLElement | null)?.blur();
-                      }}
+                      onNavigate={closeMega}
                     />
                   ) : (
                     <div className="mx-auto flex max-w-[1440px] flex-wrap gap-x-8 gap-y-3 px-8 py-6">
@@ -176,6 +205,8 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
                 onMouseEnter={() => {
                   loadSales();
                   setSalesHover(true);
+                  // Only one menu at a time: a Shop menu held open by focus closes.
+                  if (shopRef.current?.contains(document.activeElement)) closeMega();
                 }}
                 onMouseLeave={() => setSalesHover(false)}
               >
@@ -241,6 +272,17 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
           </a>
         </div>
       </div>
+
+      {/* Any page change (links, Back/Forward) closes every menu. */}
+      <Suspense fallback={null}>
+        <RouteChange
+          onChange={() => {
+            closeMega();
+            closeSales();
+            setOpen(false);
+          }}
+        />
+      </Suspense>
 
       {/* Mobile drawer */}
       <div
@@ -317,6 +359,22 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
       </aside>
     </header>
   );
+}
+
+/** Calls onChange after the URL (path or query) changes, not on first render. */
+function RouteChange({ onChange }: { onChange: () => void }) {
+  const url = `${usePathname()}?${useSearchParams().toString()}`;
+  const last = useRef(url);
+  const cb = useRef(onChange);
+  useEffect(() => {
+    cb.current = onChange;
+  });
+  useEffect(() => {
+    if (last.current === url) return;
+    last.current = url;
+    cb.current();
+  }, [url]);
+  return null;
 }
 
 function Badge({ n }: { n: number }) {
