@@ -40,12 +40,12 @@ export function ContactForm({ to }: { to: string }) {
         </label>
         <label className="block sm:col-span-2">
           <span className={label}>Message *</span>
-          <textarea name="message" required rows={6} placeholder="Enter your message here..." className={`${field} min-h-[150px] resize-y`} />
+          <textarea name="message" required rows={6} placeholder="How can we help?" className={`${field} min-h-[150px] resize-y`} />
         </label>
       </div>
 
       <button className="mt-7 w-full rounded-full bg-heading px-12 py-3.5 text-[16px] font-bold text-white shadow-[0_12px_26px_-12px_rgba(34,32,29,.7)] transition hover:bg-primary hover:text-heading sm:w-auto">
-        Submit
+        Send message
       </button>
       {sent && <p className="mt-4 text-sm" role="status">Your email app should open with your message ready to send.</p>}
     </form>

@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { HIDDEN_CATEGORY_SLUGS, PAGE_SIZE } from "./config";
+import { FILTER_CATEGORY_SLUGS, PAGE_SIZE, WOMEN_COLLECTIONS, isWomenCategory } from "./config";
 import type { ProductList, WCCategory, WCProduct } from "./types";
 
 /**
@@ -72,9 +72,33 @@ export async function getCategory(slug: string) {
   return cats.find((c) => c.slug === slug) ?? null;
 }
 
-export async function hiddenCategoryIds() {
+/** Ids of the women's categories (see WOMEN_CATEGORY_SLUGS). */
+export async function womenCategoryIds() {
   const cats = await getAllCategories();
-  return cats.filter((c) => HIDDEN_CATEGORY_SLUGS.includes(c.slug)).map((c) => c.id);
+  return cats.filter((c) => isWomenCategory(c.slug)).map((c) => c.id);
+}
+
+/**
+ * Store API query part that limits any product request to women's products.
+ * WooCommerce returns products in ANY of these categories (operator "in").
+ */
+export async function womenOnlyQuery(): Promise<{ category?: string }> {
+  const ids = await womenCategoryIds();
+  return ids.length ? { category: ids.join(",") } : {};
+}
+
+/** True if the product is part of the women's-only storefront. */
+export function isWomenProduct(p: Pick<WCProduct, "categories">) {
+  return p.categories.some((c) => isWomenCategory(c.slug));
+}
+
+/** The product's main women's category (used for breadcrumbs and "related" products). */
+export function mainWomenCategory(p: Pick<WCProduct, "categories">) {
+  return (
+    FILTER_CATEGORY_SLUGS.map((s) => p.categories.find((c) => c.slug === s)).find(Boolean) ??
+    p.categories.find((c) => isWomenCategory(c.slug)) ??
+    null
+  );
 }
 
 // ---------- Products ----------
@@ -114,19 +138,34 @@ export async function getProducts(q: ProductQuery = {}): Promise<ProductList> {
       max_price: q.maxPrice !== undefined ? q.maxPrice * 100 : undefined,
       stock_status: q.inStock ? ["instock"] : undefined,
     };
-    if (q.category) {
+    // Women's-only storefront: every request is limited to women's categories.
+    const collection = q.category ? WOMEN_COLLECTIONS[q.category] : undefined;
+    if (!q.category) {
+      Object.assign(query, await womenOnlyQuery());
+    } else if (isWomenCategory(q.category) || collection) {
+      const cats = await getAllCategories();
+      const slugs = collection ? collection.slugs : [q.category];
+      const ids = cats.filter((c) => slugs.includes(c.slug)).map((c) => c.id);
+      if (!ids.length) {
+        cacheLife("minutes");
+        return { products: [], total: 0, totalPages: 0 };
+      }
+      query.category = ids.join(",");
+    } else {
+      // Another WooCommerce list (e.g. "featured") that mixes in non-women items: read it and keep the women's products.
       const cat = await getCategory(q.category);
       if (!cat) {
         cacheLife("minutes");
         return { products: [], total: 0, totalPages: 0 };
       }
-      query.category = String(cat.id);
-    } else {
-      const hidden = await hiddenCategoryIds();
-      if (hidden.length) {
-        query.category = hidden.join(",");
-        query.category_operator = "not_in";
-      }
+      const { data } = await storeGet<WCProduct[]>("/products", { ...query, category: String(cat.id), per_page: 100, page: 1 });
+      const all = data.filter(isWomenProduct);
+      const per = q.perPage ?? PAGE_SIZE;
+      const start = ((q.page ?? 1) - 1) * per;
+      const pageList = all.slice(start, start + per);
+      if (pageList.length <= 24) await attachCardSkus(pageList);
+      cacheLife("hours");
+      return { products: pageList, total: all.length, totalPages: Math.ceil(all.length / per) };
     }
     const { data, total, totalPages } = await storeGet<WCProduct[]>("/products", query);
     // Product cards show a SKU; skip for large internal lists (sitemap, prev/next) that don't render cards.
@@ -191,9 +230,7 @@ export async function getProductBySlug(slug: string): Promise<WCProduct | null> 
 
 /** Neighbouring products (by date) for the Previous / Next links. */
 export async function getAdjacentProducts(product: WCProduct) {
-  const catId = product.categories.find(
-    (c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug),
-  )?.slug;
+  const catId = mainWomenCategory(product)?.slug;
   const list = await getProducts({ category: catId, perPage: 100, orderby: "date", order: "desc" });
   const i = list.products.findIndex((p) => p.id === product.id);
   if (i === -1) return { prev: null, next: null };
@@ -204,7 +241,7 @@ export async function getAdjacentProducts(product: WCProduct) {
 }
 
 export async function getRelatedProducts(product: WCProduct, limit = 8) {
-  const cat = product.categories.find((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug));
+  const cat = mainWomenCategory(product);
   if (!cat) return [];
   const { products } = await getProducts({ category: cat.slug, perPage: limit + 1 });
   return products.filter((p) => p.id !== product.id).slice(0, limit);

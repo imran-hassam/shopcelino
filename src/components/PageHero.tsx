@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, House } from "lucide-react";
+import { SITE } from "@/lib/config";
 
 export type Crumb = { label: string; href?: string };
 
@@ -24,8 +25,20 @@ export function PageHero({
   /** Optional content on the right (e.g. Previous / Next links). */
   aside?: React.ReactNode;
 }) {
+  // Same trail as structured data, so search engines can show it in results.
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [{ label: "Home", href: "/" }, ...crumbs].map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.label,
+      ...(c.href ? { item: `${SITE.url}${c.href === "/" ? "/" : c.href}` } : {}),
+    })),
+  };
   return (
     <header className="mx-auto max-w-[1440px] px-4 pt-6 md:px-8 md:pt-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, "\\u003c") }} />
       <div className="glass-card relative isolate flex flex-col gap-5 overflow-hidden rounded-3xl px-6 py-10 md:px-10 md:py-14 lg:flex-row lg:items-end lg:justify-between">
         {/* Soft brand-gold light inside the glass banner */}
         <span aria-hidden className="pointer-events-none absolute -right-24 -top-24 -z-10 size-72 rounded-full bg-secondary/60 blur-3xl" />

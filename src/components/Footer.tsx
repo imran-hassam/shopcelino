@@ -17,7 +17,9 @@ export function Footer({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
           <Link href="/" className="inline-block rounded-2xl bg-background px-4 py-3 shadow-[0_10px_24px_-14px_rgba(34,32,29,.8)] ring-1 ring-white/40" aria-label="Shop Celino home">
             <Logo src={logoUrl} className="h-9" />
           </Link>
-          <p className="mt-6 max-w-sm text-[15px] leading-relaxed text-footer-text/75">{SITE.tagline}</p>
+          <p className="mt-6 max-w-sm text-[15px] leading-relaxed text-footer-text/75">
+            {SITE.tagline} Women&apos;s dresses, lingerie, sleepwear and everyday tops, all in one place.
+          </p>
         </div>
 
         <div>

@@ -7,9 +7,10 @@ import { ProductCard } from "@/components/ProductCard";
 import { PageHero, PageHeroSkeleton } from "@/components/PageHero";
 
 export const metadata: Metadata = {
-  title: "Today's Sales",
-  description: "Every Shop Celino product currently on sale, newest first.",
+  title: "Today's Sales on Women's Fashion",
+  description: "See every women's style on sale at Shop Celino right now, newest first: dresses, lingerie, sleepwear and more, with the original price shown.",
   alternates: { canonical: "/todays-sales" },
+  openGraph: { title: "Today's Sales on Women's Fashion | Shop Celino", url: "/todays-sales" },
 };
 
 export default function TodaysSalesPage({ searchParams }: PageProps<"/todays-sales">) {

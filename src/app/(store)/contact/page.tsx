@@ -6,8 +6,9 @@ import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "Contact Us",
-  description: "Questions about an order or a product? Get in touch with the Shop Celino team.",
+  description: "Questions about sizing, an order or delivery? Email, call or send a message to the Shop Celino team. Our contact details and address are here.",
   alternates: { canonical: "/contact" },
+  openGraph: { title: "Contact Us | Shop Celino", url: "/contact" },
 };
 
 export default function ContactPage() {

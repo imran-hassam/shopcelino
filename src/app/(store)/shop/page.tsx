@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getAllCategories, getCategory, getProducts, type ProductQuery } from "@/lib/woo";
-import { HIDDEN_CATEGORY_SLUGS, NON_FILTER_CATEGORY_SLUGS, PAGE_SIZE } from "@/lib/config";
+import { getAllCategories, getProducts, type ProductQuery } from "@/lib/woo";
+import { FILTER_CATEGORY_SLUGS, PAGE_SIZE, SITE, WOMEN_COLLECTIONS, categoryLabel, isShopCategory } from "@/lib/config";
 import { decodeEntities, stripHtml } from "@/lib/format";
+import type { WCCategory } from "@/lib/types";
 import { ProductCard } from "@/components/ProductCard";
 import { ShopFilters } from "@/components/ShopFilters";
 import { PageHero, PageHeroSkeleton, type Crumb } from "@/components/PageHero";
@@ -13,15 +15,58 @@ import { SortSelect } from "@/components/SortSelect";
 type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
+/** A women's category or women's collection (e.g. Best Sellers) shoppers can browse, with its WooCommerce ids. */
+type ShopCat = { slug: string; label: string; ids: number[]; description: string };
+
+async function resolveShopCategory(slug: string): Promise<ShopCat | null> {
+  if (!slug || !isShopCategory(slug)) return null;
+  const cats = await getAllCategories();
+  const collection = WOMEN_COLLECTIONS[slug];
+  const found = cats.filter((c) => (collection ? collection.slugs.includes(c.slug) : c.slug === slug));
+  if (!found.length) return null;
+  const wc: WCCategory | undefined = collection ? undefined : found[0];
+  return {
+    slug,
+    label: collection ? collection.label : categoryLabel(slug, decodeEntities(wc!.name)),
+    ids: found.map((c) => c.id),
+    description: wc?.description ? stripHtml(wc.description) : "",
+  };
+}
+
+/** Meta description for a category page — plain and accurate (WooCommerce text is used when the category has one). */
+function categoryDescription(c: ShopCat) {
+  if (c.description.length >= 70) return c.description.slice(0, 158);
+  const what = c.label.toLowerCase();
+  return `Shop women's ${what} at ${SITE.name}. Browse the latest styles, check sale prices and filter by price or stock to find your fit.`;
+}
+
 export async function generateMetadata({ searchParams }: PageProps<"/shop">): Promise<Metadata> {
   const sp = (await searchParams) as SP;
-  const cat = one(sp.category) ? await getCategory(one(sp.category)) : null;
-  const q = one(sp.q);
-  const title = cat ? decodeEntities(cat.name) : q ? `Search: ${q}` : "Shop All Products";
+  const cat = await resolveShopCategory(one(sp.category));
+  const q = one(sp.q).slice(0, 60);
+  if (q) {
+    return {
+      title: `Search results for “${q}”`,
+      description: `Women's fashion at ${SITE.name} matching “${q}”.`,
+      // Search result pages are useful for shoppers, not for search engines.
+      robots: { index: false, follow: true },
+      alternates: { canonical: "/shop" },
+    };
+  }
+  if (cat) {
+    const title = `Women's ${cat.label}`.replace("Women's Best Sellers", "Best Sellers in Women's Fashion").replace("Women's New Arrivals", "New Arrivals in Women's Fashion");
+    return {
+      title,
+      description: categoryDescription(cat),
+      alternates: { canonical: `/shop?category=${cat.slug}` },
+      openGraph: { title: `${title} | ${SITE.name}`, url: `/shop?category=${cat.slug}` },
+    };
+  }
   return {
-    title,
-    description: cat?.description ? stripHtml(cat.description).slice(0, 160) : undefined,
-    alternates: { canonical: cat ? `/shop?category=${cat.slug}` : "/shop" },
+    title: "Shop Women's Fashion",
+    description: `Shop women's dresses, lingerie, sleepwear, blouses and sweaters at ${SITE.name}. Filter by category, price, sale items and stock.`,
+    alternates: { canonical: "/shop" },
+    openGraph: { title: `Shop Women's Fashion | ${SITE.name}`, url: "/shop" },
   };
 }
 
@@ -56,15 +101,17 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
   // Search: product ids matching title, descriptions or any product/variation SKU (best first).
   const found = q.trim() ? await searchProductIds(q) : null;
 
-  const [cats, cat] = await Promise.all([getAllCategories(), category ? getCategory(category) : Promise.resolve(null)]);
+  const [cats, cat] = await Promise.all([getAllCategories(), resolveShopCategory(category)]);
+  // Men's, kids' or unknown categories are not part of this women's fashion store.
+  if (category && !cat) notFound();
   const priceMin = Number.isFinite(min) ? min : undefined;
   const priceMax = Number.isFinite(max) ? max : undefined;
 
   let result: Awaited<ReturnType<typeof getProducts>>;
   if (found) {
     // Search: filter/sort the matching ids, then load just this page's products.
-    const ids = category && !cat ? [] : await filterSearchIds(found.ids, {
-      categoryId: cat?.id,
+    const ids = await filterSearchIds(found.ids, {
+      categoryIds: cat?.ids,
       minPrice: priceMin,
       maxPrice: priceMax,
       onSale,
@@ -86,22 +133,16 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
     });
   }
 
-  const filterCats = cats
-    .filter((c) => c.count > 0 && !HIDDEN_CATEGORY_SLUGS.includes(c.slug) && !NON_FILTER_CATEGORY_SLUGS.includes(c.slug))
-    .map((c) => ({ slug: c.slug, name: decodeEntities(c.name), count: c.count }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const filterCats = FILTER_CATEGORY_SLUGS.map((slug) => cats.find((c) => c.slug === slug))
+    .filter((c): c is WCCategory => !!c && c.count > 0)
+    .map((c) => ({ slug: c.slug, name: categoryLabel(c.slug, decodeEntities(c.name)), count: c.count }));
 
-  const title = q ? `Results for “${q}”` : cat ? decodeEntities(cat.name) : "Shop All Products";
+  const title = q ? `Results for “${q}”` : cat ? (cat.slug in WOMEN_COLLECTIONS ? cat.label : `Women's ${cat.label}`) : "Shop Women's Fashion";
 
-  // Breadcrumb: Home › Shop › parent categories › current category (› Search results)
-  const chain: typeof cats = [];
-  for (let c = cat; c; c = c.parent ? cats.find((x) => x.id === c!.parent) ?? null : null) {
-    chain.unshift(c);
-    if (chain.length > 5) break;
-  }
+  // Breadcrumb: Home › Shop › category (› Search results)
   const crumbs: Crumb[] = [
     { label: "Shop", href: "/shop" },
-    ...chain.map((c) => ({ label: decodeEntities(c.name), href: `/shop?category=${c.slug}` })),
+    ...(cat ? [{ label: cat.label, href: `/shop?category=${cat.slug}` }] : []),
     ...(q ? [{ label: "Search results" }] : []),
   ];
   if (!cat && !q) crumbs.splice(0, 1, { label: "Shop" });
@@ -121,7 +162,7 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
       <PageHero
         title={title}
         crumbs={crumbs}
-        description={cat?.description ? stripHtml(cat.description) : undefined}
+        description={cat?.description || undefined}
       />
 
       <div className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 md:px-8 md:pt-14">

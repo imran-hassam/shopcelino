@@ -1,8 +1,13 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { MEGA_COLLECTIONS, MENU_CATEGORIES } from "./config";
+import { MEGA_COLLECTIONS, MENU_CATEGORIES, WOMEN_COLLECTIONS, categoryLabel } from "./config";
 import { decodeEntities, formatMoney } from "./format";
 import { getAllCategories, getProducts, wpBase } from "./woo";
+
+/** Menu name for a category: the label set in config, else a friendly or WooCommerce name. */
+function menuName(slug: string, wpName: string) {
+  return MENU_CATEGORIES.find((m) => m.slug === slug)?.label ?? categoryLabel(slug, decodeEntities(wpName));
+}
 
 /** Everything the SHOP mega menu shows — all real WooCommerce / WordPress data. */
 export type MegaMenuData = {
@@ -23,24 +28,27 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
 
   // Top row: the first five menu categories that exist and have products.
   const top = MENU_CATEGORIES.map((m) => bySlug.get(m.slug)).filter((c) => c && c.count > 0).slice(0, 5) as typeof cats;
-  const [topLists, featured, post] = await Promise.all([
+  // Collections: women's categories, or women's-only versions of "New Arrivals" / "Best Sellers" (counted as such).
+  const collectionSlugs = MEGA_COLLECTIONS.filter((slug) => WOMEN_COLLECTIONS[slug] || bySlug.has(slug));
+  const [topLists, featured, post, collectionLists] = await Promise.all([
     Promise.all(top.map((c) => getProducts({ category: c.slug, perPage: 6, orderby: "popularity" }))),
     getProducts({ category: "featured", perPage: 12 }),
     getLatestPost(),
+    Promise.all(collectionSlugs.map((slug) => getProducts({ category: slug, perPage: 1 }))),
   ]);
 
   const categories = top.map((c, i) => ({
     slug: c.slug,
-    name: decodeEntities(c.name),
+    name: menuName(c.slug, c.name),
     count: c.count,
     // The category's own image if it has one, otherwise a photo of one of its products.
     image: c.image?.thumbnail ?? topLists[i]?.products.find((p) => p.images.length)?.images[0]?.thumbnail ?? null,
-    children: cats.filter((x) => x.parent === c.id && x.count > 0).slice(0, 2).map((x) => ({ slug: x.slug, name: decodeEntities(x.name) })),
+    children: cats.filter((x) => x.parent === c.id && x.count > 0).slice(0, 2).map((x) => ({ slug: x.slug, name: menuName(x.slug, x.name) })),
   }));
 
-  const collections = MEGA_COLLECTIONS.map((slug) => bySlug.get(slug))
-    .filter((c) => c && c.count > 0)
-    .map((c) => ({ slug: c!.slug, name: decodeEntities(c!.name), count: c!.count }));
+  const collections = collectionSlugs
+    .map((slug, i) => ({ slug, name: WOMEN_COLLECTIONS[slug]?.label ?? menuName(slug, bySlug.get(slug)!.name), count: collectionLists[i].total }))
+    .filter((c) => c.count > 0);
 
   // Three popular products, one from each of the first categories (a varied mix), never repeating a card photo.
   const cardImages = new Set(categories.map((c) => c.image));
@@ -70,11 +78,11 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
     };
   });
 
-  const newArrival = bySlug.get("new-arrival");
+  const newArrival = collections.find((c) => c.slug === "new-arrival");
   const feature: MegaMenuData["feature"] = post
     ? { kind: "post", title: post.title, href: post.link }
-    : newArrival && newArrival.count > 0
-      ? { kind: "category", slug: newArrival.slug, name: decodeEntities(newArrival.name), count: newArrival.count }
+    : newArrival
+      ? { kind: "category", slug: newArrival.slug, name: newArrival.name, count: newArrival.count }
       : null;
 
   // If WordPress didn't answer for something, try again in a few minutes instead of keeping the gap for hours.
@@ -124,7 +132,7 @@ export async function getSalesMenu(): Promise<SalesMenuData> {
       lists[i]?.products.find((p) => p.images.length)?.images[0]?.thumbnail ??
       null;
     if (image) usedImgs.add(image);
-    return { slug: c.slug, name: decodeEntities(c.name), image };
+    return { slug: c.slug, name: menuName(c.slug, c.name), image };
   });
 
   const products = sale.products.map((p) => {

@@ -1,12 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRight } from "lucide-react";
 import { getCategory, getProducts } from "@/lib/woo";
-import { HOME_LOOKS, HOME_TABS, MENU_CATEGORIES, SITE } from "@/lib/config";
+import { HOME_LOOKS, HOME_TABS, MENU_CATEGORIES, SITE, categoryLabel } from "@/lib/config";
 import { decodeEntities } from "@/lib/format";
 import type { WCProduct } from "@/lib/types";
+import { CONTACT } from "@/lib/contact";
+import { LOGO_URL } from "@/lib/site-urls";
 import { ProductCard } from "@/components/ProductCard";
 import { Carousel } from "@/components/Carousel";
 import { Tabs } from "@/components/Tabs";
@@ -16,6 +19,35 @@ import { Reveal } from "@/components/Reveal";
 const HERO_IMAGE = {
   src: "https://shopcelino.com/wp-content/uploads/2026/09/CEWM0163.jpg",
   alt: "Model wearing a yellow off-the-shoulder blouse from Shop Celino",
+};
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+/** Organization + WebSite structured data (real store details; search box points at the shop search). */
+const siteLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE.url}/#organization`,
+      name: SITE.name,
+      url: `${SITE.url}/`,
+      logo: LOGO_URL,
+      email: CONTACT.email,
+      telephone: CONTACT.phone,
+      address: { "@type": "PostalAddress", streetAddress: "102 Central Ave Ste 1317", addressLocality: "Sweet Grass", addressRegion: "MT", postalCode: "59484", addressCountry: "US" },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE.url}/#website`,
+      name: SITE.name,
+      url: `${SITE.url}/`,
+      publisher: { "@id": `${SITE.url}/#organization` },
+      potentialAction: { "@type": "SearchAction", target: `${SITE.url}/shop?q={search_term_string}`, "query-input": "required name=search_term_string" },
+    },
+  ],
 };
 
 export default function Home() {
@@ -60,6 +92,7 @@ async function HomeContent() {
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteLd) }} />
       {/* HERO — one full-width studio photo: model on the right, text on the left.
           The photo's white backdrop is multiplied into the brand cream so it reads as one image edge to edge. */}
       <section className="relative isolate flex flex-col overflow-hidden bg-[color-mix(in_srgb,var(--secondary-color)_55%,var(--card-background))] text-heading lg:block lg:h-[clamp(560px,42vw,780px)]">
@@ -79,7 +112,7 @@ async function HomeContent() {
         <div className="relative order-1 mx-auto w-full max-w-[1440px] px-4 pb-6 pt-10 md:px-8 md:pt-14 lg:flex lg:h-full lg:items-center lg:py-0">
           <div className="hero-glass max-w-[560px] animate-[fadein_.9s_ease] lg:max-w-[min(600px,42vw)] xl:max-w-[min(640px,42vw)]">
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-primary-hover">Women · Men · Kids</p>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-primary-hover">Women&apos;s Fashion</p>
               {saleCount > 0 && (
                 <Link href="/shop?sale=1" className="rounded-full border border-primary-hover/50 px-3 py-0.5 text-[13px] text-primary-hover transition hover:bg-heading hover:text-white">
                   Sale on now
@@ -88,7 +121,7 @@ async function HomeContent() {
             </div>
             <h1 className="mt-5 text-[38px] leading-[1.15] sm:text-[48px] lg:text-[44px] xl:text-[56px] 2xl:text-[62px]">{SITE.tagline}</h1>
             <p className="mt-6 max-w-md text-[16px] leading-relaxed tracking-wide text-heading/80">
-              Dresses, lingerie, sleepwear, men&apos;s tailoring and kids&apos; wear — all in one place.
+              Dresses, lingerie, sleepwear, blouses and sweaters, chosen to take you from morning to night.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link
@@ -109,7 +142,8 @@ async function HomeContent() {
       </section>
 
       {/* CATEGORY STRIP */}
-      <section className="relative z-10 mx-auto max-w-[1440px] px-4 md:px-8 lg:-mt-8">
+      <section className="relative z-10 mx-auto max-w-[1440px] px-4 md:px-8 lg:-mt-8" aria-labelledby="home-cats">
+        <h2 id="home-cats" className="sr-only">Shop by category</h2>
         <div className="glass glass-card no-scrollbar relative flex gap-6 overflow-x-auto rounded-3xl px-5 py-7 md:justify-between md:px-8">
           {catTiles.map((c) => (
             <Link key={c.slug} href={`/shop?category=${c.slug}`} className="group flex w-24 shrink-0 flex-col items-center gap-3 text-center">
@@ -130,7 +164,8 @@ async function HomeContent() {
       </section>
 
       {/* BEST SELLERS / NEW ARRIVALS */}
-      <section className="mx-auto max-w-[1440px] px-5 py-20 md:px-8">
+      <section className="mx-auto max-w-[1440px] px-5 py-20 md:px-8" aria-labelledby="home-picks">
+        <h2 id="home-picks" className="sr-only">Best sellers and new arrivals</h2>
         <Reveal>
           <Tabs
             tabs={HOME_TABS.map((t, i) => ({
@@ -142,7 +177,7 @@ async function HomeContent() {
                   ))}
                 </Carousel>
               ) : (
-                <p className="text-center text-muted">Products are loading — please check back shortly.</p>
+                <p className="text-center text-muted">We couldn&apos;t load these styles just now. Please refresh the page in a moment.</p>
               ),
             }))}
           />
@@ -194,7 +229,7 @@ async function HomeContent() {
                   {l.cat && <p className="mt-2 text-sm text-foreground/75">{l.cat.count} pieces</p>}
                 </div>
                 <span className="relative m-6 mt-auto w-fit rounded-full bg-heading px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(34,32,29,.6)] ring-1 ring-white/20 transition group-hover:bg-primary group-hover:text-heading">
-                  Shop {l.cat ? decodeEntities(l.cat.name) : "now"}
+                  Shop {l.cat ? categoryLabel(l.cat.slug, decodeEntities(l.cat.name)) : "now"}
                 </span>
               </Link>
             </Reveal>

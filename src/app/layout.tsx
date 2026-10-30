@@ -7,11 +7,25 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
-  title: { default: `${SITE.name} — Women's, Men's & Kids' Fashion`, template: `%s | ${SITE.name}` },
-  description: SITE.tagline,
+  title: { default: `${SITE.name} | Women's Dresses, Lingerie & Sleepwear`, template: `%s | ${SITE.name}` },
+  description: SITE.description,
+  applicationName: SITE.name,
   // Browser tab icon: the Shop Celino logo from the WordPress media library.
   icons: { icon: LOGO_URL, shortcut: LOGO_URL, apple: LOGO_URL },
-  openGraph: { siteName: SITE.name, type: "website" },
+  openGraph: {
+    siteName: SITE.name,
+    type: "website",
+    locale: "en_US",
+    title: `${SITE.name} | Women's Dresses, Lingerie & Sleepwear`,
+    description: SITE.description,
+    images: [{ url: SITE.shareImage, alt: "Model wearing a yellow off-the-shoulder blouse from Shop Celino" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE.name} | Women's Dresses, Lingerie & Sleepwear`,
+    description: SITE.description,
+    images: [SITE.shareImage],
+  },
   // Keep the preview out of Google until the domain switch is approved.
   robots: { index: process.env.ALLOW_INDEXING === "true", follow: process.env.ALLOW_INDEXING === "true" },
 };

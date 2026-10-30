@@ -1,5 +1,5 @@
 import { allWordsIds, getSkuIndexFast, matchSkus, normalizeTerm, type SkuEntry } from "@/lib/search";
-import { hiddenCategoryIds, storeGet } from "@/lib/woo";
+import { storeGet, womenOnlyQuery } from "@/lib/woo";
 import { decodeEntities, formatMoney } from "@/lib/format";
 import type { WCPrices, WCProduct } from "@/lib/types";
 
@@ -19,11 +19,11 @@ export async function GET(req: Request) {
   if (term.length < 2) return Response.json({ items: [] });
 
   try {
-    const hidden = await hiddenCategoryIds();
-    const notHidden = hidden.length ? { category: hidden.join(","), category_operator: "not_in" } : {};
+    // Women's products only (see WOMEN_CATEGORY_SLUGS in lib/config.ts).
+    const women = await womenOnlyQuery();
 
     const [text, words, index] = await Promise.all([
-      storeGet<Lite[]>("/products", { search: term, per_page: LIMIT, _fields: FIELDS, ...notHidden }).then((r) => r.data).catch(() => [] as Lite[]),
+      storeGet<Lite[]>("/products", { search: term, per_page: LIMIT, _fields: FIELDS, ...women }).then((r) => r.data).catch(() => [] as Lite[]),
       allWordsIds(term),
       getSkuIndexFast(2500),
     ]);
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
     const varIds = slots.filter((s) => s.variationId).map((s) => s.variationId);
     const [more, vars] = await Promise.all([
       missing.length
-        ? storeGet<Lite[]>("/products", { include: missing.join(","), per_page: LIMIT, _fields: FIELDS }).then((r) => r.data).catch(() => [] as Lite[])
+        ? storeGet<Lite[]>("/products", { include: missing.join(","), per_page: LIMIT, _fields: FIELDS, ...women }).then((r) => r.data).catch(() => [] as Lite[])
         : Promise.resolve([] as Lite[]),
       varIds.length
         ? storeGet<Var[]>("/products", { type: "variation", include: varIds.join(","), per_page: LIMIT, _fields: "id,parent,sku,prices,images" }).then((r) => r.data).catch(() => [] as Var[])

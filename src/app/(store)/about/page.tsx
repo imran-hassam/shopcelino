@@ -13,12 +13,13 @@ import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "About Us",
-  description: `About ${SITE.name} — online fashion for women, men and kids.`,
+  description: `${SITE.name} is an online women's fashion store for dresses, lingerie, sleepwear, blouses and sweaters, with a sale section that changes often.`,
   alternates: { canonical: "/about" },
+  openGraph: { title: `About Us | ${SITE.name}`, url: "/about" },
 };
 
 /** Categories used for the photo collage and the wide banner (real store photos). */
-const PHOTO_CATEGORIES = ["womens-dresses", "womens-lingerie", "mens-formal-wear"];
+const PHOTO_CATEGORIES = ["womens-dresses", "womens-lingerie", "women-sleepwear"];
 
 export default function AboutPage() {
   return (
@@ -54,12 +55,14 @@ async function AboutContent() {
   const banner = featured.products.filter((p) => p.images.length && !used.has(p.id)).slice(0, 4);
 
   // Show WordPress "About Us" text only if the page actually has words in it.
-  const wpHtml = wpPage && stripHtml(wpPage.content.rendered).length > 80 ? sanitizeHtml(wpPage.content.rendered) : null;
+  // (Skipped if it talks about men's or kids' fashion — this is a women's fashion store.)
+  const wpText = wpPage ? stripHtml(wpPage.content.rendered) : "";
+  const wpHtml = wpText.length > 80 && !/\b(men|men's|mens|kids?|kids'|boys?|children)\b/i.test(wpText) ? sanitizeHtml(wpPage!.content.rendered) : null;
 
   // Live numbers straight from the WooCommerce catalogue — nothing estimated.
   const stats = [
-    all.total > 0 && { value: all.total.toLocaleString("en-US"), label: "Products in our shop", note: "Across women's, men's and kids' collections." },
-    sale.total > 0 && { value: sale.total.toLocaleString("en-US"), label: "Styles on sale right now", note: "Marked down in the shop today." },
+    all.total > 0 && { value: all.total.toLocaleString("en-US"), label: "Styles in our shop", note: "Dresses, lingerie, sleepwear, tops and more." },
+    sale.total > 0 && { value: sale.total.toLocaleString("en-US"), label: "Styles on sale right now", note: "Find them all in Today's Sales." },
   ].filter(Boolean) as { value: string; label: string; note: string }[];
 
   return (
@@ -70,9 +73,9 @@ async function AboutContent() {
           <h2 className="text-[32px] leading-tight md:text-[40px]">Welcome to {SITE.name}</h2>
           <p className="mt-6 font-display text-xl text-primary-hover">{SITE.tagline}</p>
           <p className="mt-5 text-[17px] leading-relaxed text-foreground/80">
-            {SITE.name} is an online fashion store for women, men and kids. Our collections bring together dresses,
-            lingerie and sleepwear, women&apos;s apparel, men&apos;s formal wear and streetwear, ties and accessories, and
-            kidswear — so you can shop for the whole wardrobe in one place.
+            {SITE.name} is an online store for women&apos;s fashion. You&apos;ll find dresses for day and evening, lingerie
+            and sleepwear, blouses, shirts and sweaters — pieces that are easy to wear and easy to mix. New styles arrive
+            often, and our sale section is always worth a look.
           </p>
 
           {stats.length > 0 && (
@@ -107,7 +110,7 @@ async function AboutContent() {
           ) : (
             <div className="space-y-5 text-[17px] leading-relaxed text-foreground/80">
               <p>
-                Browse by collection —{" "}
+                Start with a category:{" "}
                 {MENU_CATEGORIES.map((c, i) => (
                   <span key={c.slug}>
                     <Link href={`/shop?category=${c.slug}`} className="underline decoration-primary/60 underline-offset-4 hover:text-primary-hover">
@@ -119,7 +122,7 @@ async function AboutContent() {
                 All prices on the site are shown in US dollars.
               </p>
               <p>
-                Questions about sizing, an order or delivery? Email us at{" "}
+                Have a question about sizing, an order or delivery? Email us at{" "}
                 <a href={`mailto:${CONTACT.email}`} className="underline underline-offset-4 hover:text-primary-hover">{CONTACT.email}</a> or call{" "}
                 <a href={`tel:${CONTACT.phone.replace(/[^\d+]/g, "")}`} className="underline underline-offset-4 hover:text-primary-hover">{CONTACT.phone}</a>.
                 Our mailing address is {CONTACT.address.join(", ")}.

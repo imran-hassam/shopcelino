@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { after } from "next/server";
-import { hiddenCategoryIds, storeGet } from "./woo";
+import { storeGet, womenOnlyQuery } from "./woo";
 
 /**
  * Catalogue search.
@@ -66,12 +66,8 @@ let local: { index: SkuEntry[]; at: number } | null = null;
 
 async function buildIndex() {
   const t0 = Date.now();
-  const hidden = await hiddenCategoryIds();
-  const parentQuery: Record<string, string | number> = { per_page: 100, _fields: "id,sku,is_in_stock" };
-  if (hidden.length) {
-    parentQuery.category = hidden.join(",");
-    parentQuery.category_operator = "not_in";
-  }
+  // Women's products only (see WOMEN_CATEGORY_SLUGS); their variations are kept via `live` below.
+  const parentQuery: Record<string, string | number> = { per_page: 100, _fields: "id,sku,is_in_stock", ...(await womenOnlyQuery()) };
   const parents = await fetchAllPages<{ id: number; sku: string; is_in_stock: boolean }>("/products", parentQuery);
   const variations = await fetchAllPages<{ id: number; parent: number; sku: string; is_in_stock: boolean }>("/products", {
     type: "variation",
@@ -89,7 +85,8 @@ async function buildIndex() {
 }
 
 /** Every product + variation SKU in the shop. Shared across all server instances. */
-export async function getSkuIndex(): Promise<SkuEntry[]> {
+// Named for the women's-only storefront so cached indexes from before that change are never reused.
+export async function getWomenSkuIndex(): Promise<SkuEntry[]> {
   "use cache: remote";
   cacheTag("products", "sku-index");
   try {
@@ -116,7 +113,7 @@ export async function getSkuIndex(): Promise<SkuEntry[]> {
  * time it's built — the build keeps running in the background and fills the cache.
  */
 export async function getSkuIndexFast(ms = 3000): Promise<SkuEntry[] | null> {
-  const p = getSkuIndex().then((idx) => {
+  const p = getWomenSkuIndex().then((idx) => {
     if (idx.length) local = { index: idx, at: Date.now() };
     return idx;
   });
@@ -151,16 +148,11 @@ export function matchSkus(index: SkuEntry[], term: string): SkuHit[] {
 }
 
 /** Ids of products whose title / descriptions match (Store API search), best first. */
-export async function textSearchIds(term: string): Promise<number[]> {
+export async function womenTextSearchIds(term: string): Promise<number[]> {
   "use cache: remote";
   cacheTag("products");
   try {
-    const hidden = await hiddenCategoryIds();
-    const query: Record<string, string | number> = { search: term, per_page: 100, _fields: "id" };
-    if (hidden.length) {
-      query.category = hidden.join(",");
-      query.category_operator = "not_in";
-    }
+    const query: Record<string, string | number> = { search: term, per_page: 100, _fields: "id", ...(await womenOnlyQuery()) };
     const ids: number[] = [];
     for (let page = 1; page <= MAX_RESULTS / 100; page++) {
       const { data, totalPages } = await getPage<{ id: number }>("/products", { ...query, page });
@@ -183,7 +175,7 @@ export async function textSearchIds(term: string): Promise<number[]> {
 export async function allWordsIds(term: string): Promise<number[]> {
   const words = [...new Set(term.toLowerCase().split(" ").filter((w) => w.length >= 2))].slice(0, 4);
   if (words.length < 2) return [];
-  const lists = await Promise.all(words.map((w) => textSearchIds(w)));
+  const lists = await Promise.all(words.map((w) => womenTextSearchIds(w)));
   const sets = lists.slice(1).map((l) => new Set(l));
   return lists[0].filter((id) => sets.every((st) => st.has(id)));
 }
@@ -196,7 +188,7 @@ export async function searchProductIds(rawTerm: string) {
   const term = normalizeTerm(rawTerm);
   if (!term) return { ids: [] as number[], skuHits: [] as SkuHit[] };
   const [text, words, index] = await Promise.all([
-    textSearchIds(term),
+    womenTextSearchIds(term),
     allWordsIds(term),
     term.length >= 2 ? getSkuIndexFast(4000) : Promise.resolve(null),
   ]);
@@ -211,7 +203,8 @@ export async function searchProductIds(rawTerm: string) {
 }
 
 export type SearchFilters = {
-  categoryId?: number;
+  /** Women's category ids to limit to (one category, or a women's collection). Default: all women's categories. */
+  categoryIds?: number[];
   minPrice?: number;
   maxPrice?: number;
   onSale?: boolean;
@@ -228,16 +221,13 @@ export type SearchFilters = {
 export async function filterSearchIds(ids: number[], f: SearchFilters): Promise<number[]> {
   "use cache";
   cacheTag("products");
-  const noFilters = !f.categoryId && f.minPrice === undefined && f.maxPrice === undefined && !f.onSale && !f.inStock;
-  if (!ids.length || (noFilters && (f.sort === "featured" || f.sort === "popular"))) {
+  if (!ids.length) {
     cacheLife("hours");
     return ids;
   }
-  if (noFilters && f.sort === "newest") {
-    cacheLife("hours");
-    return [...ids].sort((a, b) => b - a);
-  }
   try {
+    // Always checked against the women's categories, so a search can only ever list women's products.
+    const scope = f.categoryIds?.length ? { category: f.categoryIds.join(",") } : await womenOnlyQuery();
     type Row = { id: number; name: string; prices: { price: string } };
     const chunks: number[][] = [];
     for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i, i + 50));
@@ -249,7 +239,7 @@ export async function filterSearchIds(ids: number[], f: SearchFilters): Promise<
             include: chunk.join(","),
             per_page: 100,
             _fields: "id,name,prices",
-            category: f.categoryId ? String(f.categoryId) : undefined,
+            ...scope,
             min_price: f.minPrice !== undefined ? f.minPrice * 100 : undefined,
             max_price: f.maxPrice !== undefined ? f.maxPrice * 100 : undefined,
             on_sale: f.onSale ? true : undefined,

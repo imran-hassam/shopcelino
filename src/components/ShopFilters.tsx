@@ -44,10 +44,10 @@ export function ShopFilters({ categories }: { categories: Cat[] }) {
   const panel = (
     <div>
       <div className="flex items-center justify-between pb-4">
-        <h2 className="font-sans text-xl font-semibold">Filter By</h2>
+        <h2 className="font-sans text-xl font-semibold">Filter by</h2>
         {activeCount > 0 && (
           <Link href={pathname} className="text-sm underline underline-offset-4 hover:text-primary-hover">
-            Clear All
+            Clear all
           </Link>
         )}
       </div>
