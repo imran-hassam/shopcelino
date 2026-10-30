@@ -6,12 +6,17 @@ import { PAGE_SIZE } from "@/lib/config";
 import { ProductCard } from "@/components/ProductCard";
 import { PageHero, PageHeroSkeleton } from "@/components/PageHero";
 
-export const metadata: Metadata = {
-  title: "Today's Sales on Women's Fashion",
-  description: "See every women's style on sale at Shop Celino right now, newest first: dresses, lingerie, sleepwear and more, with the original price shown.",
-  alternates: { canonical: "/todays-sales" },
-  openGraph: { title: "Today's Sales on Women's Fashion | Shop Celino", url: "/todays-sales" },
-};
+export async function generateMetadata({ searchParams }: PageProps<"/todays-sales">): Promise<Metadata> {
+  const raw = (await searchParams).page;
+  const page = Math.max(1, Number(Array.isArray(raw) ? raw[0] : raw) || 1);
+  const url = page > 1 ? `/todays-sales?page=${page}` : "/todays-sales";
+  return {
+    title: `Today's Sales on Women's Fashion${page > 1 ? ` – Page ${page}` : ""}`,
+    description: "See every women's style on sale at Shop Celino right now, newest first: dresses, lingerie, sleepwear and more, with the original price shown.",
+    alternates: { canonical: url },
+    openGraph: { title: "Today's Sales on Women's Fashion | Shop Celino", url },
+  };
+}
 
 export default function TodaysSalesPage({ searchParams }: PageProps<"/todays-sales">) {
   return (

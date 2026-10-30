@@ -44,6 +44,10 @@ export async function generateMetadata({ searchParams }: PageProps<"/shop">): Pr
   const sp = (await searchParams) as SP;
   const cat = await resolveShopCategory(one(sp.category));
   const q = one(sp.q).slice(0, 60);
+  // Each listing page points to itself (page 2+ keep their page number).
+  const pageNo = Math.max(1, Number(one(sp.page)) || 1);
+  const withPage = (url: string) => (pageNo > 1 ? `${url}${url.includes("?") ? "&" : "?"}page=${pageNo}` : url);
+  const pageSuffix = pageNo > 1 ? ` – Page ${pageNo}` : "";
   if (q) {
     return {
       title: `Search results for “${q}”`,
@@ -56,16 +60,16 @@ export async function generateMetadata({ searchParams }: PageProps<"/shop">): Pr
   if (cat) {
     const title = `Women's ${cat.label}`.replace("Women's Best Sellers", "Best Sellers in Women's Fashion").replace("Women's New Arrivals", "New Arrivals in Women's Fashion");
     return {
-      title,
+      title: title + pageSuffix,
       description: categoryDescription(cat),
-      alternates: { canonical: `/shop?category=${cat.slug}` },
+      alternates: { canonical: withPage(`/shop?category=${cat.slug}`) },
       openGraph: { title: `${title} | ${SITE.name}`, url: `/shop?category=${cat.slug}` },
     };
   }
   return {
-    title: "Shop Women's Fashion",
+    title: "Shop Women's Fashion" + pageSuffix,
     description: `Shop women's dresses, lingerie, sleepwear, blouses and sweaters at ${SITE.name}. Filter by category, price, sale items and stock.`,
-    alternates: { canonical: "/shop" },
+    alternates: { canonical: withPage("/shop") },
     openGraph: { title: `Shop Women's Fashion | ${SITE.name}`, url: "/shop" },
   };
 }
