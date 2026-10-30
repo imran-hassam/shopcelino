@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { ArrowRight, X } from "lucide-react";
 import type { SizeTab } from "@/lib/guides";
 
-type Img = { src: string; alt: string } | null;
+type Img = { src: string; alt: string; position?: string } | null;
 
 /* Same classes as the rest of the homepage: hero eyebrow, "Shop Now" pill button, Tabs pills. */
 const eyebrow = "text-[13px] font-semibold uppercase tracking-[0.25em] text-primary-hover";
@@ -82,6 +82,7 @@ export function FitStyleGuide({ sizeTabs, images }: { sizeTabs: SizeTab[]; image
                   sizes="(min-width:1440px) 690px, (min-width:768px) 48vw, 100vw"
                   quality={80}
                   className="object-cover object-[50%_20%] transition duration-700 group-hover:scale-105"
+                  style={c.img.position ? { objectPosition: c.img.position } : undefined}
                 />
               )}
             </div>

@@ -268,7 +268,7 @@ async function HomeContent() {
 
 /** Real Shop Celino product photos chosen for the Fit & Style Guide (full-length dress for fit, everyday outfits for style). */
 const GUIDE_IMAGES = {
-  size: { src: "https://shopcelino.com/wp-content/uploads/2026/09/CEBDR014_1.jpg", alt: "Two models wearing a red off-shoulder peplum midi dress" },
+  size: { src: "https://shopcelino.com/wp-content/uploads/2026/09/CEBDR065_1.jpg", alt: "Model in an olive belted maxi dress with a side slit against a warm beige wall", position: "50% 8%" },
   style: { src: "https://shopcelino.com/wp-content/uploads/2026/09/CEBL152_1.jpg", alt: "Model in a grey tunic top and jeans at an outdoor café" },
   drawer: { src: "https://shopcelino.com/wp-content/uploads/2026/09/CESW033_1.jpg", alt: "Model in a white long-sleeve top and jeans outdoors" },
 };
