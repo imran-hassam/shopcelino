@@ -277,8 +277,13 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
       <Suspense fallback={null}>
         <RouteChange
           onChange={() => {
-            closeMega();
-            closeSales();
+            // A slow page can arrive after the pointer has already moved back onto a menu;
+            // a menu the pointer is resting on stays (that is a fresh hover), everything else closes.
+            const a = document.activeElement;
+            if (a instanceof HTMLElement && shopRef.current?.contains(a)) a.blur();
+            if (!shopRef.current?.matches(":hover")) setMegaHidden(true);
+            setSalesPinned(false);
+            if (!salesRef.current?.matches(":hover")) setSalesHover(false);
             setOpen(false);
           }}
         />
