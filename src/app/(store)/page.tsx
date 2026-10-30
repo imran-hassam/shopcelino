@@ -74,8 +74,16 @@ function HomeSkeleton() {
 
 async function HomeContent() {
   const [hero, sale, tabData, catTiles, looks] = await Promise.all([
-    // Every published featured product (newest first), browsed in the Featured Pieces slider.
-    getProducts({ category: "featured", perPage: 48 }),
+    // Every published featured product (newest first) for the Featured Pieces slider,
+    // loaded in pages of 12 so each page's card details load the same way as before.
+    getProducts({ category: "featured", perPage: 12 }).then(async (first) => {
+      const more = await Promise.all(
+        Array.from({ length: Math.min(first.totalPages, 4) - 1 }, (_, i) => getProducts({ category: "featured", perPage: 12, page: i + 2 })),
+      );
+      const seen = new Set<number>();
+      const products = [first, ...more].flatMap((r) => r.products).filter((p) => !seen.has(p.id) && seen.add(p.id));
+      return { ...first, products };
+    }),
     getProducts({ onSale: true, perPage: 1 }),
     Promise.all(HOME_TABS.map((t) => getProducts({ category: t.slug, perPage: 10 }))),
     Promise.all(
