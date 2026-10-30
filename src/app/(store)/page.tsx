@@ -82,8 +82,9 @@ async function HomeContent() {
     ),
     Promise.all(
       HOME_LOOKS.map(async (l) => {
-        const [cat, list] = await Promise.all([getCategory(l.slug), getProducts({ category: l.slug, perPage: 1, orderby: "popularity" })]);
-        return { ...l, cat, product: list.products[0] as WCProduct | undefined };
+        // Newest product's photo; count = published products in the category.
+        const [cat, list] = await Promise.all([getCategory(l.slug), getProducts({ category: l.slug, perPage: 1 })]);
+        return { ...l, cat, total: list.total, product: list.products[0] as WCProduct | undefined };
       }),
     ),
   ]);
@@ -145,7 +146,7 @@ async function HomeContent() {
       <section className="relative z-10 mx-auto max-w-[1440px] px-4 md:px-8 lg:-mt-8" aria-labelledby="home-cats">
         <h2 id="home-cats" className="sr-only">Shop by category</h2>
         <div className="glass glass-card no-scrollbar relative flex gap-6 overflow-x-auto rounded-3xl px-5 py-7 md:justify-between md:px-8">
-          {catTiles.map((c) => (
+          {catTiles.filter((c) => c.total > 0).map((c) => (
             <Link key={c.slug} href={`/shop?category=${c.slug}`} className="group flex w-24 shrink-0 flex-col items-center gap-3 text-center">
               <span className="size-20 overflow-hidden rounded-full border border-white bg-card p-1 shadow-[0_10px_22px_-14px_rgba(34,32,29,.55)] transition group-hover:-translate-y-1 group-hover:border-primary">
                 {c.product?.images[0] ? (
@@ -207,7 +208,7 @@ async function HomeContent() {
           <h2 className="text-center text-[34px] md:text-[44px]">Choose Your Look</h2>
         </Reveal>
         <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {looks.map((l, i) => (
+          {looks.filter((l) => l.total > 0).map((l, i) => (
             <Reveal key={l.slug} delay={i * 120}>
               <Link
                 href={`/shop?category=${l.slug}`}
@@ -226,7 +227,7 @@ async function HomeContent() {
                 {/* Frosted-glass caption over the photo */}
                 <div className="glass relative m-4 rounded-2xl px-5 py-4">
                   <h3 className="text-2xl">{l.title}</h3>
-                  {l.cat && <p className="mt-2 text-sm text-foreground/75">{l.cat.count} pieces</p>}
+                  <p className="mt-2 text-sm text-foreground/75">{l.total} pieces</p>
                 </div>
                 <span className="relative m-6 mt-auto w-fit rounded-full bg-heading px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(34,32,29,.6)] ring-1 ring-white/20 transition group-hover:bg-primary group-hover:text-heading">
                   Shop {l.cat ? categoryLabel(l.cat.slug, decodeEntities(l.cat.name)) : "now"}

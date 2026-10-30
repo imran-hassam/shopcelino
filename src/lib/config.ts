@@ -14,34 +14,24 @@ export const SITE = {
 };
 
 /**
- * WOMEN'S-ONLY STOREFRONT
- * The store sells women's fashion only. A product is shown anywhere on the site
- * (listings, search, menus, sitemap, product pages) only if it belongs to at least one
- * of these WooCommerce categories. Everything else (men's, kids', demo items) stays in
- * WooCommerce untouched but is not shown. To show a product, give it one of these categories.
+ * WHAT THE SHOP SHOWS
+ * Every PUBLISHED WooCommerce product (the Store API never returns drafts, private or trashed
+ * products). Categories appear wherever they contain at least one published product — see
+ * getActiveCategories() in lib/woo.ts. To hide a product, set it to Draft in WordPress.
  */
-export const WOMEN_CATEGORY_SLUGS = [
-  "womens-dresses", "dresses", "womens-lingerie", "women-sleepwear", "women-apparel",
-  "womens-blouses", "womens-shirts", "women-sweaters", "women-sports-bra",
-  "babydolls-chemises", "teddies-bodysuits", "teddies-bodysuits-sale", "bra-panty-sets",
-  "bra-and-panty-sets-deals", "corsets-bustiers",
-  "best-seller-women-lingerie", "best-seller-women-apperal", "best-sellers-womens-apparel",
-  "new-arrival-women-lingerie", "new-arrival-womens-apparel",
-];
 
 /**
- * Store-wide collections ("Best Sellers", "New Arrivals") mix in men's items in WooCommerce,
- * so the storefront uses their women's-only versions instead. Same URL (/shop?category=best-seller).
+ * Store-wide lists that every product sits in. They are kept out of breadcrumbs/"related products"
+ * (a product's own category is more useful there) but still listed and browsable like any category.
  */
-export const WOMEN_COLLECTIONS: Record<string, { label: string; slugs: string[] }> = {
-  "best-seller": { label: "Best Sellers", slugs: ["best-seller-women-lingerie", "best-seller-women-apperal", "best-sellers-womens-apparel"] },
-  "new-arrival": { label: "New Arrivals", slugs: ["new-arrival-women-lingerie", "new-arrival-womens-apparel"] },
-};
+export const GENERIC_CATEGORY_SLUGS = [
+  "shop", "best-seller", "best-selling-products", "new-products", "new-arrival", "winter-items",
+  "limited-pieces-4", "limited-pieces", "featured",
+];
 
 /** Friendlier names for WooCommerce categories whose names read awkwardly on the site. */
 export const CATEGORY_LABELS: Record<string, string> = {
-  "womens-dresses": "Dresses",
-  dresses: "Dresses",
+  "womens-dresses": "Women's Dresses",
   "womens-lingerie": "Lingerie",
   "women-sleepwear": "Sleepwear",
   "women-apparel": "Clothing",
@@ -57,7 +47,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   "corsets-bustiers": "Corsets & Bustiers",
   "best-seller-women-lingerie": "Best-Selling Lingerie",
   "best-seller-women-apperal": "Best-Selling Clothing",
-  "best-sellers-womens-apparel": "Best-Selling Clothing",
+  "best-sellers-womens-apparel": "Best-Selling Apparel",
   "new-arrival-women-lingerie": "New Lingerie",
   "new-arrival-womens-apparel": "New Clothing",
   "best-seller": "Best Sellers",
@@ -76,10 +66,10 @@ export const MENU_CATEGORIES: { slug: string; label: string }[] = [
   { slug: "bra-panty-sets", label: "Bra & Panty Sets" },
 ];
 
-/** SHOP mega menu "Collections" column (women's categories or women's collections, shown if they have products). */
+/** SHOP mega menu "Collections" column (WooCommerce categories, shown only while they have published products). */
 export const MEGA_COLLECTIONS = ["new-arrival", "best-seller", "corsets-bustiers", "women-apparel", "women-sports-bra", "bra-and-panty-sets-deals"];
 
-/** Home page "Best Sellers / New Arrivals" tabs (women's collections above). */
+/** Home page "Best Sellers / New Arrivals" tabs (WooCommerce categories). */
 export const HOME_TABS = [
   { slug: "best-seller", label: "Best Sellers" },
   { slug: "new-arrival", label: "New Arrivals" },
@@ -92,34 +82,8 @@ export const HOME_LOOKS = [
   { slug: "women-sleepwear", title: "Comfortable Sleepwear" },
 ];
 
-export function isWomenCategory(slug: string) {
-  return WOMEN_CATEGORY_SLUGS.includes(slug);
-}
-/** Categories and collections a shopper can browse at /shop?category=… */
-export function isShopCategory(slug: string) {
-  return isWomenCategory(slug) || slug in WOMEN_COLLECTIONS;
-}
 export function categoryLabel(slug: string, wpName: string) {
   return CATEGORY_LABELS[slug] ?? wpName;
 }
-
-/**
- * Leftover demo categories in WooCommerce that don't belong in a fashion store.
- * Products in these are hidden from listings and the filter sidebar.
- */
-export const HIDDEN_CATEGORY_SLUGS = [
-  "uncategorized",
-  "laptops-tablets-pcs", "laptops", "apple-macbook", "business-laptop", "gaming-laptop", "ultrabook",
-  "pcs", "all-in-one", "gaming-pcs", "office-pcs",
-  "tablets", "android-tablets", "apple-ipad", "windows-tablets",
-  "smartphones", "smartphons", "car-holders", "covers-for-phones", "data-cables",
-  "mains-chargers", "memory-cards", "power-banks", "stand-holders", "wireless-chargers",
-];
-
-/** Categories offered in the shop's "Filter by" list (women's only, no duplicate merchandising lists). */
-export const FILTER_CATEGORY_SLUGS = [
-  "womens-dresses", "womens-lingerie", "women-sleepwear", "women-apparel", "womens-blouses", "womens-shirts",
-  "women-sweaters", "women-sports-bra", "babydolls-chemises", "teddies-bodysuits", "bra-panty-sets", "corsets-bustiers",
-];
 
 export const PAGE_SIZE = 12;

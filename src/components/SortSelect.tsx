@@ -3,8 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const OPTIONS = [
-  ["featured", "Featured"],
   ["newest", "Newest"],
+  ["featured", "Featured"],
   ["popular", "Most popular"],
   ["price-asc", "Price: low to high"],
   ["price-desc", "Price: high to low"],
@@ -23,7 +23,7 @@ export function SortSelect({ value }: { value: string }) {
         onChange={(e) => {
           const p = new URLSearchParams(sp.toString());
           p.delete("page");
-          if (e.target.value === "featured") p.delete("sort");
+          if (e.target.value === "newest") p.delete("sort"); // newest is the default
           else p.set("sort", e.target.value);
           const s = p.toString();
           router.push(`${pathname}${s ? `?${s}` : ""}`, { scroll: false });

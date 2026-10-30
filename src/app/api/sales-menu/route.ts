@@ -10,9 +10,9 @@ export async function GET() {
   await connection();
   try {
     const data = await getSalesMenu();
-    const complete = data.categories.length === 8 && data.categories.every((c) => c.image) && data.products.length === 6;
+    const complete = data.categories.length > 0 && data.categories.every((c) => c.image) && data.products.length > 0;
     return Response.json(data, {
-      headers: { "Cache-Control": complete ? "public, s-maxage=1800, stale-while-revalidate=86400" : "no-store" },
+      headers: { "Cache-Control": complete ? "public, s-maxage=600, stale-while-revalidate=3600" : "no-store" },
     });
   } catch {
     return Response.json(null, { status: 502, headers: { "Cache-Control": "no-store" } });

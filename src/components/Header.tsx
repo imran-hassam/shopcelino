@@ -37,6 +37,8 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
       .catch(() => undefined)
       .finally(() => (megaLoading.current = false));
   }
+  // Menu categories that currently have published products (falls back to the configured list while loading).
+  const menuCats = mega?.menu ?? MENU_CATEGORIES;
   // Hide right after a click inside it, until the pointer leaves the Shop item.
   const [megaHidden, setMegaHidden] = useState(false);
 
@@ -270,7 +272,10 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
           <Link href="/" className="block border-b border-line py-3.5">Home</Link>
           <button
             className="flex w-full items-center justify-between border-b border-line py-3.5"
-            onClick={() => setShopOpen((s) => !s)}
+            onClick={() => {
+              loadMega();
+              setShopOpen((s) => !s);
+            }}
             aria-expanded={shopOpen}
           >
             Shop <ChevronDown className={`size-5 transition-transform ${shopOpen ? "rotate-180" : ""}`} strokeWidth={1.5} />
@@ -278,7 +283,7 @@ export function Header({ logoUrl, accountUrl }: { logoUrl: string; accountUrl: s
           {shopOpen && (
             <div className="border-b border-line py-2 pl-3 text-base">
               <Link href="/shop" className="block py-2 font-semibold">Shop All</Link>
-              {MENU_CATEGORIES.map((c) => (
+              {menuCats.map((c) => (
                 <Link key={c.slug} href={`/shop?category=${c.slug}`} className="block py-2 text-foreground/85">
                   {c.label}
                 </Link>

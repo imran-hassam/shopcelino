@@ -1,5 +1,5 @@
 import { allWordsIds, getSkuIndexFast, matchSkus, normalizeTerm, type SkuEntry } from "@/lib/search";
-import { storeGet, womenOnlyQuery } from "@/lib/woo";
+import { storeGet } from "@/lib/woo";
 import { decodeEntities, formatMoney } from "@/lib/format";
 import type { WCPrices, WCProduct } from "@/lib/types";
 
@@ -19,11 +19,10 @@ export async function GET(req: Request) {
   if (term.length < 2) return Response.json({ items: [] });
 
   try {
-    // Women's products only (see WOMEN_CATEGORY_SLUGS in lib/config.ts).
-    const women = await womenOnlyQuery();
+    // Published products only (the Store API never returns drafts). Newest matches first.
 
     const [text, words, index] = await Promise.all([
-      storeGet<Lite[]>("/products", { search: term, per_page: LIMIT, _fields: FIELDS, ...women }).then((r) => r.data).catch(() => [] as Lite[]),
+      storeGet<Lite[]>("/products", { search: term, per_page: LIMIT, _fields: FIELDS, orderby: "date", order: "desc" }).then((r) => r.data).catch(() => [] as Lite[]),
       allWordsIds(term),
       getSkuIndexFast(2500),
     ]);
@@ -50,7 +49,7 @@ export async function GET(req: Request) {
     const varIds = slots.filter((s) => s.variationId).map((s) => s.variationId);
     const [more, vars] = await Promise.all([
       missing.length
-        ? storeGet<Lite[]>("/products", { include: missing.join(","), per_page: LIMIT, _fields: FIELDS, ...women }).then((r) => r.data).catch(() => [] as Lite[])
+        ? storeGet<Lite[]>("/products", { include: missing.join(","), per_page: LIMIT, _fields: FIELDS }).then((r) => r.data).catch(() => [] as Lite[])
         : Promise.resolve([] as Lite[]),
       varIds.length
         ? storeGet<Var[]>("/products", { type: "variation", include: varIds.join(","), per_page: LIMIT, _fields: "id,parent,sku,prices,images" }).then((r) => r.data).catch(() => [] as Var[])
@@ -98,7 +97,7 @@ export async function GET(req: Request) {
 
     return Response.json(
       { items },
-      { headers: { "Cache-Control": index ? "public, s-maxage=600, stale-while-revalidate=86400" : "public, s-maxage=30" } },
+      { headers: { "Cache-Control": index ? "public, s-maxage=300, stale-while-revalidate=3600" : "public, s-maxage=30" } },
     );
   } catch (e) {
     console.error(e);

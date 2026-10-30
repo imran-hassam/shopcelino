@@ -40,7 +40,7 @@ async function AboutContent() {
     getProducts({ onSale: true, perPage: 1 }),
     getWpPage("about-us"),
     getProducts({ category: "featured", perPage: 10 }),
-    ...PHOTO_CATEGORIES.map((slug) => getProducts({ category: slug, perPage: 4, orderby: "popularity" })),
+    ...PHOTO_CATEGORIES.map((slug) => getProducts({ category: slug, perPage: 4 })),
   ]);
 
   // One distinct product photo per category.

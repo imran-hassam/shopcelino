@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getProductBySlug, getRelatedProducts, getVariations, getWpPage, isWomenProduct, mainWomenCategory } from "@/lib/woo";
+import { getProductBySlug, getRelatedProducts, getVariations, getWpPage, mainCategory } from "@/lib/woo";
 import { decodeEntities, formatMoney, sanitizeHtml, stripHtml } from "@/lib/format";
 import { SITE, categoryLabel } from "@/lib/config";
 import { ProductGallery } from "@/components/ProductGallery";
@@ -22,7 +22,7 @@ function clip(text: string, max: number) {
 export async function generateMetadata({ params }: PageProps<"/product/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const p = await getProductBySlug(slug);
-  if (!p || !isWomenProduct(p)) return { title: "Product not found", robots: { index: false } };
+  if (!p) return { title: "Product not found", robots: { index: false } };
   const name = decodeEntities(p.name);
   const price = formatMoney(p.prices.price_range?.min_amount ?? p.prices.price, p.prices);
   const text = stripHtml(p.short_description || p.description);
@@ -50,8 +50,8 @@ export default function ProductPage({ params }: PageProps<"/product/[slug]">) {
 async function ProductContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  // Only women's products are part of this store (see WOMEN_CATEGORY_SLUGS).
-  if (!product || !isWomenProduct(product)) notFound();
+  // Only published products exist in the Store API: drafts show "not found".
+  if (!product) notFound();
 
   const [variations, related, refundPage, shippingPage] = await Promise.all([
     product.variations.length ? getVariations(product.slug, product.variations.map((v) => v.id)) : Promise.resolve([]),
@@ -69,7 +69,7 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
   const url = `${SITE.url}/product/${product.slug}`;
   const availability = product.is_in_stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
   const seller = { "@type": "Organization", name: SITE.name };
-  const mainCat = mainWomenCategory(product);
+  const mainCat = mainCategory(product);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",

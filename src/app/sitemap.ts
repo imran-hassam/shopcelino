@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 import { connection } from "next/server";
-import { FILTER_CATEGORY_SLUGS, SITE, WOMEN_COLLECTIONS } from "@/lib/config";
-import { getAllCategories, getProducts } from "@/lib/woo";
+import { SITE } from "@/lib/config";
+import { getActiveCategories, getProducts } from "@/lib/woo";
 
 // Built on request (not during deploy) so a slow WordPress server can't fail the build.
-// Product lists are still cached by getProducts(), which only returns women's products,
-// so men's / kids' items can never appear here.
+// Only published products and categories that currently have published products are listed,
+// so drafts drop out automatically when the cached data refreshes (every 10 minutes).
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connection();
   const base = SITE.url;
@@ -16,12 +16,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/about`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${base}/contact`, changeFrequency: "monthly", priority: 0.4 },
   ];
-  const cats = await getAllCategories();
-  const catSlugs = [
-    ...Object.keys(WOMEN_COLLECTIONS),
-    ...FILTER_CATEGORY_SLUGS.filter((slug) => (cats.find((c) => c.slug === slug)?.count ?? 0) > 0),
-  ];
-  const catUrls: MetadataRoute.Sitemap = catSlugs.map((slug) => ({ url: `${base}/shop?category=${slug}`, changeFrequency: "weekly", priority: 0.7 }));
+  const cats = await getActiveCategories();
+  const catUrls: MetadataRoute.Sitemap = cats.map((c) => ({ url: `${base}/shop?category=${c.slug}`, changeFrequency: "weekly", priority: 0.7 }));
   const products: MetadataRoute.Sitemap = [];
   for (let page = 1; page <= 30; page++) {
     const { products: list, totalPages } = await getProducts({ page, perPage: 100, orderby: "date", order: "desc" });

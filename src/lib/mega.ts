@@ -1,8 +1,8 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { MEGA_COLLECTIONS, MENU_CATEGORIES, WOMEN_COLLECTIONS, categoryLabel } from "./config";
+import { MEGA_COLLECTIONS, MENU_CATEGORIES, categoryLabel } from "./config";
 import { decodeEntities, formatMoney } from "./format";
-import { getAllCategories, getProducts, wpBase } from "./woo";
+import { getActiveCategories, getProducts, wpBase } from "./woo";
 
 /** Menu name for a category: the label set in config, else a friendly or WooCommerce name. */
 function menuName(slug: string, wpName: string) {
@@ -18,23 +18,24 @@ export type MegaMenuData = {
     | { kind: "post"; title: string; href: string }
     | { kind: "category"; slug: string; name: string; count: number }
     | null;
+  /** Menu categories that currently have published products (used by the mobile menu too). */
+  menu: { slug: string; label: string }[];
 };
 
 export async function getMegaMenu(): Promise<MegaMenuData> {
   "use cache";
   cacheTag("products", "categories", "mega-menu");
-  const cats = await getAllCategories();
+  // Only categories that have published products right now (counts = published products).
+  const cats = await getActiveCategories();
   const bySlug = new Map(cats.map((c) => [c.slug, c]));
+  const menu = MENU_CATEGORIES.filter((m) => bySlug.has(m.slug));
 
-  // Top row: the first five menu categories that exist and have products.
-  const top = MENU_CATEGORIES.map((m) => bySlug.get(m.slug)).filter((c) => c && c.count > 0).slice(0, 5) as typeof cats;
-  // Collections: women's categories, or women's-only versions of "New Arrivals" / "Best Sellers" (counted as such).
-  const collectionSlugs = MEGA_COLLECTIONS.filter((slug) => WOMEN_COLLECTIONS[slug] || bySlug.has(slug));
-  const [topLists, featured, post, collectionLists] = await Promise.all([
-    Promise.all(top.map((c) => getProducts({ category: c.slug, perPage: 6, orderby: "popularity" }))),
+  // Top row: the first five active menu categories.
+  const top = menu.map((m) => bySlug.get(m.slug)!).slice(0, 5);
+  const [topLists, featured, post] = await Promise.all([
+    Promise.all(top.map((c) => getProducts({ category: c.slug, perPage: 6 }))), // newest first
     getProducts({ category: "featured", perPage: 12 }),
     getLatestPost(),
-    Promise.all(collectionSlugs.map((slug) => getProducts({ category: slug, perPage: 1 }))),
   ]);
 
   const categories = top.map((c, i) => ({
@@ -46,11 +47,12 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
     children: cats.filter((x) => x.parent === c.id && x.count > 0).slice(0, 2).map((x) => ({ slug: x.slug, name: menuName(x.slug, x.name) })),
   }));
 
-  const collections = collectionSlugs
-    .map((slug, i) => ({ slug, name: WOMEN_COLLECTIONS[slug]?.label ?? menuName(slug, bySlug.get(slug)!.name), count: collectionLists[i].total }))
-    .filter((c) => c.count > 0);
+  const collections = MEGA_COLLECTIONS.filter((slug) => bySlug.has(slug)).map((slug) => {
+    const c = bySlug.get(slug)!;
+    return { slug, name: menuName(slug, c.name), count: c.count };
+  });
 
-  // Three popular products, one from each of the first categories (a varied mix), never repeating a card photo.
+  // Three newest products, one from each of the first categories (a varied mix), never repeating a card photo.
   const cardImages = new Set(categories.map((c) => c.image));
   const used = new Set<number>();
   const picks: typeof featured.products = [];
@@ -86,10 +88,10 @@ export async function getMegaMenu(): Promise<MegaMenuData> {
       : null;
 
   // If WordPress didn't answer for something, try again in a few minutes instead of keeping the gap for hours.
-  const complete = categories.length === 5 && categories.every((c) => c.image) && products.length === 3;
-  if (complete) cacheLife("hours");
+  const complete = categories.length === Math.min(5, menu.length) && categories.length > 0 && categories.every((c) => c.image) && products.length === 3;
+  if (complete) cacheLife({ stale: 60, revalidate: 600, expire: 86400 });
   else cacheLife("minutes");
-  return { categories, collections, products, feature };
+  return { categories, collections, products, feature, menu };
 }
 
 /** Latest published blog post on the WordPress site, if there is one. */
@@ -113,12 +115,12 @@ export type SalesMenuData = {
 export async function getSalesMenu(): Promise<SalesMenuData> {
   "use cache";
   cacheTag("products", "categories", "sales-menu");
-  const cats = await getAllCategories();
+  const cats = await getActiveCategories();
   const bySlug = new Map(cats.map((c) => [c.slug, c]));
-  const shopBy = MENU_CATEGORIES.map((m) => bySlug.get(m.slug)).filter((c) => c && c.count > 0).slice(0, 8) as typeof cats;
+  const shopBy = MENU_CATEGORIES.map((m) => bySlug.get(m.slug)).filter((c) => !!c).slice(0, 8) as typeof cats;
 
   const [lists, sale] = await Promise.all([
-    Promise.all(shopBy.map((c) => (c.image ? Promise.resolve(null) : getProducts({ category: c.slug, perPage: 6, orderby: "popularity" })))),
+    Promise.all(shopBy.map((c) => (c.image ? Promise.resolve(null) : getProducts({ category: c.slug, perPage: 6 })))), // newest first
     // Newest products that are on sale right now.
     getProducts({ onSale: true, orderby: "date", order: "desc", perPage: 6 }),
   ]);
@@ -148,7 +150,7 @@ export async function getSalesMenu(): Promise<SalesMenuData> {
   });
 
   // Incomplete (e.g. WordPress timed out): keep it only briefly so the next request retries.
-  if (categories.length === 8 && categories.every((c) => c.image) && products.length === 6) cacheLife("hours");
+  if (categories.length > 0 && categories.every((c) => c.image) && (products.length === 6 || products.length === sale.total)) cacheLife({ stale: 60, revalidate: 600, expire: 86400 });
   else cacheLife("seconds");
   return { categories, products };
 }

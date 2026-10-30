@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { FILTER_CATEGORY_SLUGS, PAGE_SIZE, WOMEN_COLLECTIONS, isWomenCategory } from "./config";
+import { GENERIC_CATEGORY_SLUGS, MENU_CATEGORIES, PAGE_SIZE } from "./config";
 import type { ProductList, WCCategory, WCProduct } from "./types";
 
 /**
@@ -72,31 +72,56 @@ export async function getCategory(slug: string) {
   return cats.find((c) => c.slug === slug) ?? null;
 }
 
-/** Ids of the women's categories (see WOMEN_CATEGORY_SLUGS). */
-export async function womenCategoryIds() {
-  const cats = await getAllCategories();
-  return cats.filter((c) => isWomenCategory(c.slug)).map((c) => c.id);
-}
+/**
+ * Product lists refresh from WooCommerce every 10 minutes (served instantly from cache meanwhile).
+ * A WooCommerce webhook to /api/revalidate refreshes them immediately.
+ */
+const LIVE = { stale: 60, revalidate: 600, expire: 86400 } as const;
 
 /**
- * Store API query part that limits any product request to women's products.
- * WooCommerce returns products in ANY of these categories (operator "in").
+ * Categories that contain at least one PUBLISHED product, with counts taken from the published
+ * products themselves (not WooCommerce's stored counts). Drafts never count: the Store API only
+ * returns published products. Built from one light request per 100 products.
  */
-export async function womenOnlyQuery(): Promise<{ category?: string }> {
-  const ids = await womenCategoryIds();
-  return ids.length ? { category: ids.join(",") } : {};
+export async function getActiveCategories(): Promise<WCCategory[]> {
+  "use cache";
+  cacheTag("products", "categories");
+  try {
+    const [cats, counts] = await Promise.all([getAllCategories(), publishedCategoryCounts()]);
+    if (!counts) {
+      cacheLife("seconds");
+      return [];
+    }
+    cacheLife(LIVE);
+    return cats.filter((c) => (counts.get(c.id) ?? 0) > 0).map((c) => ({ ...c, count: counts.get(c.id)! }));
+  } catch (e) {
+    console.error(e);
+    cacheLife("seconds");
+    return [];
+  }
 }
 
-/** True if the product is part of the women's-only storefront. */
-export function isWomenProduct(p: Pick<WCProduct, "categories">) {
-  return p.categories.some((c) => isWomenCategory(c.slug));
+async function publishedCategoryCounts(): Promise<Map<number, number> | null> {
+  const counts = new Map<number, number>();
+  let totalPages = 1;
+  for (let page = 1; page <= totalPages && page <= 50; page++) {
+    let got: { data: { categories: { id: number }[] }[]; totalPages: number } | null = null;
+    for (let attempt = 0; attempt < 3 && !got; attempt++) {
+      got = await storeGet<{ categories: { id: number }[] }[]>("/products", { per_page: 100, page, _fields: "id,categories" }, 30000).catch(() => null);
+    }
+    if (!got) return null; // incomplete data would hide real categories: don't use it
+    totalPages = got.totalPages;
+    for (const p of got.data) for (const c of p.categories) counts.set(c.id, (counts.get(c.id) ?? 0) + 1);
+  }
+  return counts;
 }
 
-/** The product's main women's category (used for breadcrumbs and "related" products). */
-export function mainWomenCategory(p: Pick<WCProduct, "categories">) {
+/** The product's own category (not a store-wide list like "Shop" or "Best Seller"), for breadcrumbs and "related" products. */
+export function mainCategory(p: Pick<WCProduct, "categories">) {
   return (
-    FILTER_CATEGORY_SLUGS.map((s) => p.categories.find((c) => c.slug === s)).find(Boolean) ??
-    p.categories.find((c) => isWomenCategory(c.slug)) ??
+    MENU_CATEGORIES.map((m) => p.categories.find((c) => c.slug === m.slug)).find(Boolean) ??
+    p.categories.find((c) => !GENERIC_CATEGORY_SLUGS.includes(c.slug)) ??
+    p.categories[0] ??
     null
   );
 }
@@ -130,47 +155,28 @@ export async function getProducts(q: ProductQuery = {}): Promise<ProductList> {
       include: q.include?.join(","),
       per_page: q.perPage ?? PAGE_SIZE,
       page: q.page ?? 1,
-      orderby: q.orderby,
-      order: q.order,
+      // Newest published first unless another order is asked for (sorted by WooCommerce before paging).
+      orderby: q.orderby ?? "date",
+      order: q.order ?? (q.orderby && q.orderby !== "date" ? undefined : "desc"),
       search: q.search,
       on_sale: q.onSale ? true : undefined,
       min_price: q.minPrice !== undefined ? q.minPrice * 100 : undefined,
       max_price: q.maxPrice !== undefined ? q.maxPrice * 100 : undefined,
       stock_status: q.inStock ? ["instock"] : undefined,
     };
-    // Women's-only storefront: every request is limited to women's categories.
-    const collection = q.category ? WOMEN_COLLECTIONS[q.category] : undefined;
-    if (!q.category) {
-      Object.assign(query, await womenOnlyQuery());
-    } else if (isWomenCategory(q.category) || collection) {
-      const cats = await getAllCategories();
-      const slugs = collection ? collection.slugs : [q.category];
-      const ids = cats.filter((c) => slugs.includes(c.slug)).map((c) => c.id);
-      if (!ids.length) {
-        cacheLife("minutes");
-        return { products: [], total: 0, totalPages: 0 };
-      }
-      query.category = ids.join(",");
-    } else {
-      // Another WooCommerce list (e.g. "featured") that mixes in non-women items: read it and keep the women's products.
+    // Only published products exist in the Store API, so no extra visibility filter is needed.
+    if (q.category) {
       const cat = await getCategory(q.category);
       if (!cat) {
         cacheLife("minutes");
         return { products: [], total: 0, totalPages: 0 };
       }
-      const { data } = await storeGet<WCProduct[]>("/products", { ...query, category: String(cat.id), per_page: 100, page: 1 });
-      const all = data.filter(isWomenProduct);
-      const per = q.perPage ?? PAGE_SIZE;
-      const start = ((q.page ?? 1) - 1) * per;
-      const pageList = all.slice(start, start + per);
-      if (pageList.length <= 24) await attachCardSkus(pageList);
-      cacheLife("hours");
-      return { products: pageList, total: all.length, totalPages: Math.ceil(all.length / per) };
+      query.category = String(cat.id);
     }
     const { data, total, totalPages } = await storeGet<WCProduct[]>("/products", query);
     // Product cards show a SKU; skip for large internal lists (sitemap, prev/next) that don't render cards.
     if (data.length <= 24) await attachCardSkus(data);
-    cacheLife("hours");
+    cacheLife(LIVE);
     return { products: data, total, totalPages };
   } catch (e) {
     console.error(e);
@@ -219,7 +225,7 @@ export async function getProductBySlug(slug: string): Promise<WCProduct | null> 
   cacheTag("products", `product:${slug}`);
   try {
     const { data } = await storeGet<WCProduct[]>("/products", { slug, per_page: 1 });
-    cacheLife("hours");
+    cacheLife(LIVE);
     return data[0] ?? null;
   } catch (e) {
     console.error(e);
@@ -230,7 +236,7 @@ export async function getProductBySlug(slug: string): Promise<WCProduct | null> 
 
 /** Neighbouring products (by date) for the Previous / Next links. */
 export async function getAdjacentProducts(product: WCProduct) {
-  const catId = mainWomenCategory(product)?.slug;
+  const catId = mainCategory(product)?.slug;
   const list = await getProducts({ category: catId, perPage: 100, orderby: "date", order: "desc" });
   const i = list.products.findIndex((p) => p.id === product.id);
   if (i === -1) return { prev: null, next: null };
@@ -241,7 +247,7 @@ export async function getAdjacentProducts(product: WCProduct) {
 }
 
 export async function getRelatedProducts(product: WCProduct, limit = 8) {
-  const cat = mainWomenCategory(product);
+  const cat = mainCategory(product);
   if (!cat) return [];
   const { products } = await getProducts({ category: cat.slug, perPage: limit + 1 });
   return products.filter((p) => p.id !== product.id).slice(0, limit);
@@ -254,7 +260,7 @@ export async function getVariations(slug: string, variationIds: number[]): Promi
   try {
     const ids = variationIds.slice(0, 40);
     const list = await Promise.all(ids.map((id) => storeGet<WCProduct>(`/products/${id}`).then((r) => r.data).catch(() => null)));
-    cacheLife("hours");
+    cacheLife(LIVE);
     return list.filter(Boolean) as WCProduct[];
   } catch (e) {
     console.error(e);

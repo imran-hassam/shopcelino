@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getAllCategories, getProducts, type ProductQuery } from "@/lib/woo";
-import { FILTER_CATEGORY_SLUGS, PAGE_SIZE, SITE, WOMEN_COLLECTIONS, categoryLabel, isShopCategory } from "@/lib/config";
+import { getActiveCategories, getProducts, type ProductQuery } from "@/lib/woo";
+import { PAGE_SIZE, SITE, categoryLabel } from "@/lib/config";
 import { decodeEntities, stripHtml } from "@/lib/format";
 import type { WCCategory } from "@/lib/types";
 import { ProductCard } from "@/components/ProductCard";
@@ -15,29 +15,36 @@ import { SortSelect } from "@/components/SortSelect";
 type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
-/** A women's category or women's collection (e.g. Best Sellers) shoppers can browse, with its WooCommerce ids. */
-type ShopCat = { slug: string; label: string; ids: number[]; description: string };
+/** A category shoppers can browse: one that currently has published products. */
+type ShopCat = { slug: string; label: string; ids: number[]; description: string; count: number };
+
+/** Display names for the active categories, made unique (two categories never share a name in the list). */
+function labelled(cats: WCCategory[]) {
+  const base = cats.map((c) => categoryLabel(c.slug, decodeEntities(c.name)));
+  return cats.map((c, i) => {
+    const clash = base.some((b, j) => j !== i && b === base[i]);
+    const wpName = decodeEntities(c.name);
+    return { cat: c, label: clash && wpName !== base[i] ? wpName : base[i] };
+  });
+}
 
 async function resolveShopCategory(slug: string): Promise<ShopCat | null> {
-  if (!slug || !isShopCategory(slug)) return null;
-  const cats = await getAllCategories();
-  const collection = WOMEN_COLLECTIONS[slug];
-  const found = cats.filter((c) => (collection ? collection.slugs.includes(c.slug) : c.slug === slug));
-  if (!found.length) return null;
-  const wc: WCCategory | undefined = collection ? undefined : found[0];
+  if (!slug) return null;
+  const hit = labelled(await getActiveCategories()).find((x) => x.cat.slug === slug);
+  if (!hit) return null;
   return {
     slug,
-    label: collection ? collection.label : categoryLabel(slug, decodeEntities(wc!.name)),
-    ids: found.map((c) => c.id),
-    description: wc?.description ? stripHtml(wc.description) : "",
+    label: hit.label,
+    ids: [hit.cat.id],
+    description: hit.cat.description ? stripHtml(hit.cat.description) : "",
+    count: hit.cat.count,
   };
 }
 
 /** Meta description for a category page — plain and accurate (WooCommerce text is used when the category has one). */
 function categoryDescription(c: ShopCat) {
   if (c.description.length >= 70) return c.description.slice(0, 158);
-  const what = c.label.toLowerCase();
-  return `Shop women's ${what} at ${SITE.name}. Browse the latest styles, check sale prices and filter by price or stock to find your fit.`;
+  return `Shop ${c.label} at ${SITE.name}: ${c.count} ${c.count === 1 ? "style" : "styles"}, newest first. Check sale prices and filter by price or stock to find your fit.`;
 }
 
 export async function generateMetadata({ searchParams }: PageProps<"/shop">): Promise<Metadata> {
@@ -58,7 +65,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/shop">): Pr
     };
   }
   if (cat) {
-    const title = `Women's ${cat.label}`.replace("Women's Best Sellers", "Best Sellers in Women's Fashion").replace("Women's New Arrivals", "New Arrivals in Women's Fashion");
+    const title = cat.label;
     return {
       title: title + pageSuffix,
       description: categoryDescription(cat),
@@ -95,7 +102,8 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const category = one(sp.category);
   const q = one(sp.q).slice(0, 100);
-  const sort = SORTS[one(sp.sort)] ? one(sp.sort) : "featured";
+  // Default: newest published first (WooCommerce sorts before paging, so page 2 continues page 1).
+  const sort = SORTS[one(sp.sort)] ? one(sp.sort) : "newest";
   const page = Math.max(1, Number(one(sp.page)) || 1);
   const min = one(sp.min) ? Number(one(sp.min)) : undefined;
   const max = one(sp.max) ? Number(one(sp.max)) : undefined;
@@ -105,8 +113,8 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
   // Search: product ids matching title, descriptions or any product/variation SKU (best first).
   const found = q.trim() ? await searchProductIds(q) : null;
 
-  const [cats, cat] = await Promise.all([getAllCategories(), resolveShopCategory(category)]);
-  // Men's, kids' or unknown categories are not part of this women's fashion store.
+  const [cats, cat] = await Promise.all([getActiveCategories(), resolveShopCategory(category)]);
+  // Unknown categories, or ones with no published products right now, show "not found".
   if (category && !cat) notFound();
   const priceMin = Number.isFinite(min) ? min : undefined;
   const priceMax = Number.isFinite(max) ? max : undefined;
@@ -116,6 +124,7 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
     // Search: filter/sort the matching ids, then load just this page's products.
     const ids = await filterSearchIds(found.ids, {
       categoryIds: cat?.ids,
+      pinned: found.skuHits.filter((h) => h.rank < 2).map((h) => h.parentId),
       minPrice: priceMin,
       maxPrice: priceMax,
       onSale,
@@ -137,11 +146,12 @@ async function ShopContent({ searchParams }: { searchParams: Promise<SP> }) {
     });
   }
 
-  const filterCats = FILTER_CATEGORY_SLUGS.map((slug) => cats.find((c) => c.slug === slug))
-    .filter((c): c is WCCategory => !!c && c.count > 0)
-    .map((c) => ({ slug: c.slug, name: categoryLabel(c.slug, decodeEntities(c.name)), count: c.count }));
+  // Every category that has published products right now (counts = published products), A–Z.
+  const filterCats = labelled(cats)
+    .map(({ cat: c, label }) => ({ slug: c.slug, name: label, count: c.count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const title = q ? `Results for “${q}”` : cat ? (cat.slug in WOMEN_COLLECTIONS ? cat.label : `Women's ${cat.label}`) : "Shop Women's Fashion";
+  const title = q ? `Results for “${q}”` : cat ? cat.label : "Shop Women's Fashion";
 
   // Breadcrumb: Home › Shop › category (› Search results)
   const crumbs: Crumb[] = [

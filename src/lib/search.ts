@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { after } from "next/server";
-import { storeGet, womenOnlyQuery } from "./woo";
+import { storeGet, wpBase } from "./woo";
 
 /**
  * Catalogue search.
@@ -66,8 +66,8 @@ let local: { index: SkuEntry[]; at: number } | null = null;
 
 async function buildIndex() {
   const t0 = Date.now();
-  // Women's products only (see WOMEN_CATEGORY_SLUGS); their variations are kept via `live` below.
-  const parentQuery: Record<string, string | number> = { per_page: 100, _fields: "id,sku,is_in_stock", ...(await womenOnlyQuery()) };
+  // Published products only (the Store API never returns drafts); their variations are kept via `live` below.
+  const parentQuery: Record<string, string | number> = { per_page: 100, _fields: "id,sku,is_in_stock" };
   const parents = await fetchAllPages<{ id: number; sku: string; is_in_stock: boolean }>("/products", parentQuery);
   const variations = await fetchAllPages<{ id: number; parent: number; sku: string; is_in_stock: boolean }>("/products", {
     type: "variation",
@@ -85,8 +85,8 @@ async function buildIndex() {
 }
 
 /** Every product + variation SKU in the shop. Shared across all server instances. */
-// Named for the women's-only storefront so cached indexes from before that change are never reused.
-export async function getWomenSkuIndex(): Promise<SkuEntry[]> {
+// Named for published-only data so cached indexes from earlier versions are never reused.
+export async function getPublishedSkuIndex(): Promise<SkuEntry[]> {
   "use cache: remote";
   cacheTag("products", "sku-index");
   try {
@@ -113,7 +113,7 @@ export async function getWomenSkuIndex(): Promise<SkuEntry[]> {
  * time it's built — the build keeps running in the background and fills the cache.
  */
 export async function getSkuIndexFast(ms = 3000): Promise<SkuEntry[] | null> {
-  const p = getWomenSkuIndex().then((idx) => {
+  const p = getPublishedSkuIndex().then((idx) => {
     if (idx.length) local = { index: idx, at: Date.now() };
     return idx;
   });
@@ -148,11 +148,12 @@ export function matchSkus(index: SkuEntry[], term: string): SkuHit[] {
 }
 
 /** Ids of products whose title / descriptions match (Store API search), best first. */
-export async function womenTextSearchIds(term: string): Promise<number[]> {
+export async function publishedTextSearchIds(term: string): Promise<number[]> {
   "use cache: remote";
   cacheTag("products");
   try {
-    const query: Record<string, string | number> = { search: term, per_page: 100, _fields: "id", ...(await womenOnlyQuery()) };
+    // Newest matching products first.
+    const query: Record<string, string | number> = { search: term, per_page: 100, _fields: "id", orderby: "date", order: "desc" };
     const ids: number[] = [];
     for (let page = 1; page <= MAX_RESULTS / 100; page++) {
       const { data, totalPages } = await getPage<{ id: number }>("/products", { ...query, page });
@@ -175,7 +176,7 @@ export async function womenTextSearchIds(term: string): Promise<number[]> {
 export async function allWordsIds(term: string): Promise<number[]> {
   const words = [...new Set(term.toLowerCase().split(" ").filter((w) => w.length >= 2))].slice(0, 4);
   if (words.length < 2) return [];
-  const lists = await Promise.all(words.map((w) => womenTextSearchIds(w)));
+  const lists = await Promise.all(words.map((w) => publishedTextSearchIds(w)));
   const sets = lists.slice(1).map((l) => new Set(l));
   return lists[0].filter((id) => sets.every((st) => st.has(id)));
 }
@@ -188,7 +189,7 @@ export async function searchProductIds(rawTerm: string) {
   const term = normalizeTerm(rawTerm);
   if (!term) return { ids: [] as number[], skuHits: [] as SkuHit[] };
   const [text, words, index] = await Promise.all([
-    womenTextSearchIds(term),
+    publishedTextSearchIds(term),
     allWordsIds(term),
     term.length >= 2 ? getSkuIndexFast(4000) : Promise.resolve(null),
   ]);
@@ -203,20 +204,37 @@ export async function searchProductIds(rawTerm: string) {
 }
 
 export type SearchFilters = {
-  /** Women's category ids to limit to (one category, or a women's collection). Default: all women's categories. */
+  /** Category ids to limit to (optional). */
   categoryIds?: number[];
   minPrice?: number;
   maxPrice?: number;
   onSale?: boolean;
   inStock?: boolean;
   sort: "featured" | "newest" | "price-asc" | "price-desc" | "popular" | "name";
+  /** Ids kept at the very top when sorting by newest/relevance (exact SKU matches). */
+  pinned?: number[];
 };
+
+/** Publication date (ms) of published products, from WordPress (the Store API doesn't include dates). */
+async function publishDates(ids: number[]): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  for (let i = 0; i < ids.length; i += 100) {
+    const chunk = ids.slice(i, i + 100);
+    const res = await fetch(`${wpBase()}/wp-json/wp/v2/product?include=${chunk.join(",")}&per_page=100&_fields=id,date_gmt`, {
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) throw new Error(`product dates ${res.status}`);
+    for (const r of (await res.json()) as { id: number; date_gmt: string }[]) out.set(r.id, Date.parse(r.date_gmt + "Z"));
+  }
+  return out;
+}
 
 /**
  * Apply shop filters and sorting to a search's product ids. WordPress can't take
  * hundreds of ids in one request, so this asks in batches of 50 and returns ids only.
- * "featured" keeps search relevance order; "popular" keeps relevance too (WooCommerce
- * doesn't expose sales counts); "newest" uses product id order (WordPress ids grow over time).
+ * "featured" and "popular" keep search relevance order (WooCommerce doesn't expose sales counts);
+ * "newest" sorts by the WordPress publication date (newest first, product id breaks ties).
+ * Exact SKU matches (`pinned`) stay on top for newest/relevance.
  */
 export async function filterSearchIds(ids: number[], f: SearchFilters): Promise<number[]> {
   "use cache";
@@ -226,8 +244,7 @@ export async function filterSearchIds(ids: number[], f: SearchFilters): Promise<
     return ids;
   }
   try {
-    // Always checked against the women's categories, so a search can only ever list women's products.
-    const scope = f.categoryIds?.length ? { category: f.categoryIds.join(",") } : await womenOnlyQuery();
+    const scope = f.categoryIds?.length ? { category: f.categoryIds.join(",") } : {};
     type Row = { id: number; name: string; prices: { price: string } };
     const chunks: number[][] = [];
     for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i, i + 50));
@@ -250,18 +267,26 @@ export async function filterSearchIds(ids: number[], f: SearchFilters): Promise<
       got.forEach((g) => rows.push(...g));
     }
     const pos = new Map(ids.map((id, i) => [id, i]));
+    const dates = f.sort === "newest" ? await publishDates(rows.map((r) => r.id)) : new Map<number, number>();
     const price = (r: Row) => Number(r.prices?.price ?? 0);
     const sorters: Record<SearchFilters["sort"], (a: Row, b: Row) => number> = {
       featured: (a, b) => pos.get(a.id)! - pos.get(b.id)!,
       popular: (a, b) => pos.get(a.id)! - pos.get(b.id)!,
-      newest: (a, b) => b.id - a.id,
+      newest: (a, b) => (dates.get(b.id) ?? 0) - (dates.get(a.id) ?? 0) || b.id - a.id,
       "price-asc": (a, b) => price(a) - price(b),
       "price-desc": (a, b) => price(b) - price(a),
       name: (a, b) => a.name.localeCompare(b.name),
     };
     rows.sort(sorters[f.sort]);
-    cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
-    return rows.map((r) => r.id);
+    let out = rows.map((r) => r.id);
+    if (f.pinned?.length && (f.sort === "newest" || f.sort === "featured")) {
+      const present = new Set(out);
+      const top = f.pinned.filter((id) => present.has(id));
+      const topSet = new Set(top);
+      out = [...top, ...out.filter((id) => !topSet.has(id))];
+    }
+    cacheLife({ stale: 60, revalidate: 600, expire: 86400 });
+    return out;
   } catch (e) {
     console.error(e);
     cacheLife("seconds");
