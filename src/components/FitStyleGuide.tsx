@@ -32,11 +32,14 @@ export function FitStyleGuide({ sizeTabs, images }: { sizeTabs: SizeTab[]; image
     trigger.current = el;
     setOpen(which);
   };
-  const close = useCallback(() => {
-    setOpen(null);
-    // Return focus to the button that opened the guide.
-    requestAnimationFrame(() => trigger.current?.focus());
-  }, []);
+  const close = useCallback(() => setOpen(null), []);
+  // After a guide closes (and its panel is inert), return focus to the button that opened it.
+  useEffect(() => {
+    if (open === null && trigger.current) {
+      trigger.current.focus();
+      trigger.current = null;
+    }
+  }, [open]);
 
   const cards = [
     {
@@ -209,7 +212,7 @@ function SizeGuide({ tabs }: { tabs: SizeTab[] }) {
   return (
     <div>
       {/* Same pill tabs as the homepage Best Sellers / New Arrivals switch */}
-      <div role="tablist" aria-label="Size guide" className="glass-chip no-scrollbar flex w-full gap-1 overflow-x-auto rounded-full p-1.5">
+      <div role="tablist" aria-label="Size guide" className="glass-chip grid grid-cols-2 gap-1 rounded-3xl p-1.5">
         {all.map((t) => (
           <button
             key={t.key}
@@ -217,7 +220,7 @@ function SizeGuide({ tabs }: { tabs: SizeTab[] }) {
             type="button"
             aria-selected={active === t.key}
             onClick={() => setActive(t.key)}
-            className={`shrink-0 rounded-full px-4 py-2 text-[14px] transition-all ${
+            className={`rounded-full px-3 py-2 text-[14px] transition-all ${
               active === t.key ? "bg-white shadow-[0_6px_16px_-8px_rgba(34,32,29,.4)]" : "text-foreground/70 hover:bg-white/50 hover:text-foreground"
             }`}
           >
