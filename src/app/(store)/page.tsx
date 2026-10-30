@@ -12,6 +12,7 @@ import { CONTACT } from "@/lib/contact";
 import { LOGO_URL } from "@/lib/site-urls";
 import { ProductCard } from "@/components/ProductCard";
 import { Carousel } from "@/components/Carousel";
+import { FeaturedSlider } from "@/components/FeaturedSlider";
 import { Tabs } from "@/components/Tabs";
 import { Reveal } from "@/components/Reveal";
 import { FitStyleGuide } from "@/components/FitStyleGuide";
@@ -73,7 +74,8 @@ function HomeSkeleton() {
 
 async function HomeContent() {
   const [hero, sale, tabData, catTiles, looks] = await Promise.all([
-    getProducts({ category: "featured", perPage: 6 }),
+    // Every published featured product (newest first), browsed in the Featured Pieces slider.
+    getProducts({ category: "featured", perPage: 48 }),
     getProducts({ onSale: true, perPage: 1 }),
     Promise.all(HOME_TABS.map((t) => getProducts({ category: t.slug, perPage: 10 }))),
     Promise.all(
@@ -246,14 +248,19 @@ async function HomeContent() {
           <div className="mx-auto max-w-[1440px] px-5 py-20 md:px-8">
             <Reveal>
               <h2 className="text-center text-[34px] md:text-[44px]">Featured Pieces</h2>
+              <p className="mx-auto mt-4 max-w-xl text-center text-[16px] leading-relaxed text-foreground/75">
+                Explore our handpicked women&apos;s fashion pieces, selected to bring effortless style to your everyday wardrobe.
+              </p>
             </Reveal>
-            <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-6">
-              {hero.products.slice(0, 6).map((p, i) => (
-                <Reveal key={p.id} delay={(i % 6) * 80}>
-                  <ProductCard product={p} />
-                </Reveal>
-              ))}
-            </div>
+            <Reveal className="mt-12">
+              <FeaturedSlider label="Featured Pieces">
+                {hero.products.map((p) => (
+                  <div key={p.id}>
+                    <ProductCard product={p} />
+                  </div>
+                ))}
+              </FeaturedSlider>
+            </Reveal>
           </div>
         </section>
       )}
