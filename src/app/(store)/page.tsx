@@ -266,19 +266,17 @@ async function HomeContent() {
   );
 }
 
-/** Fit & Style Guide: real store photos and real product sizes (see lib/guides.ts). */
+/** Real Shop Celino product photos chosen for the Fit & Style Guide (full-length dress for fit, everyday outfits for style). */
+const GUIDE_IMAGES = {
+  size: { src: "https://shopcelino.com/wp-content/uploads/2026/09/CEBDR014_1.jpg", alt: "Two models wearing a red off-shoulder peplum midi dress" },
+  style: { src: "https://shopcelino.com/wp-content/uploads/2026/09/CEBL152_1.jpg", alt: "Model in a grey tunic top and jeans at an outdoor café" },
+  drawer: { src: "https://shopcelino.com/wp-content/uploads/2026/09/CESW033_1.jpg", alt: "Model in a white long-sleeve top and jeans outdoors" },
+};
+
+/** Fit & Style Guide: real product sizes (see lib/guides.ts) and real store photos. */
 async function GuideSection() {
-  const [sizeTabs, dresses, tops, sweaters] = await Promise.all([
-    getSizeGuide(),
-    getProducts({ category: "womens-dresses", perPage: 2 }),
-    getProducts({ category: "womens-blouses", perPage: 2 }),
-    getProducts({ category: "women-sweaters", perPage: 2 }),
-  ]);
-  const pick = (list: WCProduct[]) => {
-    const p = list.find((x) => x.images.length);
-    return p ? { src: p.images[0].src, alt: p.images[0].alt || decodeEntities(p.name) } : null;
-  };
-  return <FitStyleGuide sizeTabs={sizeTabs} images={{ size: pick(dresses.products), style: pick(tops.products), drawer: pick(sweaters.products) }} />;
+  const sizeTabs = await getSizeGuide();
+  return <FitStyleGuide sizeTabs={sizeTabs} images={GUIDE_IMAGES} />;
 }
 
 function GuideSkeleton() {
