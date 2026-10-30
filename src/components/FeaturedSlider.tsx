@@ -31,8 +31,30 @@ export function FeaturedSlider({ children, label }: { children: React.ReactNode;
     el.addEventListener("scroll", update, { passive: true });
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    // Paging loads several product photos at once and the image host sometimes drops a burst;
+    // give each failed photo up to two quiet retries.
+    const timers: number[] = [];
+    const onError = (e: Event) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement)) return;
+      const tries = Number(img.dataset.retry ?? 0);
+      if (tries >= 2) return;
+      img.dataset.retry = String(tries + 1);
+      timers.push(
+        window.setTimeout(() => {
+          // Same photo, fresh request (the size the browser had picked from srcset).
+          const url = new URL(img.currentSrc || img.src);
+          url.searchParams.set("retry", String(tries + 1));
+          img.removeAttribute("srcset");
+          img.src = url.toString();
+        }, 800 * (tries + 1)),
+      );
+    };
+    el.addEventListener("error", onError, true);
     return () => {
       el.removeEventListener("scroll", update);
+      el.removeEventListener("error", onError, true);
+      timers.forEach(clearTimeout);
       ro.disconnect();
     };
   }, [update]);
