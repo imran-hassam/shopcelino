@@ -129,7 +129,7 @@ export function FeaturedSlider({ children, label }: { children: React.ReactNode;
             suppressClick.current = false;
           }
         }}
-        className="no-scrollbar -mx-2 -my-3 flex snap-x snap-mandatory scroll-px-2 gap-5 overflow-x-auto overscroll-x-contain px-2 pb-8 pt-3 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/60 [&>*]:w-full [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-[calc((100%-20px)/2)] lg:[&>*]:w-[calc((100%-40px)/3)] xl:[&>*]:w-[calc((100%-60px)/4)]"
+        className="no-scrollbar relative -mx-2 -my-3 flex snap-x snap-mandatory scroll-px-2 gap-5 overflow-x-auto overscroll-x-contain px-2 pb-8 pt-3 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/60 [&>*]:w-full [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-[calc((100%-20px)/2)] lg:[&>*]:w-[calc((100%-40px)/3)] xl:[&>*]:w-[calc((100%-60px)/4)]"
       >
         {children}
       </div>
