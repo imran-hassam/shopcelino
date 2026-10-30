@@ -43,6 +43,12 @@ export async function storeGet<T>(path: string, query: Query = {}, timeoutMs = 1
   };
 }
 
+/**
+ * Products and categories refresh from WooCommerce every 10 minutes (served instantly from cache meanwhile).
+ * A WooCommerce webhook to /api/revalidate refreshes them immediately.
+ */
+const LIVE = { stale: 60, revalidate: 600, expire: 86400 } as const;
+
 // ---------- Categories ----------
 
 export async function getAllCategories(): Promise<WCCategory[]> {
@@ -58,7 +64,7 @@ export async function getAllCategories(): Promise<WCCategory[]> {
       all.push(...data);
       if (page >= totalPages || data.length < 100) break;
     }
-    cacheLife("hours");
+    cacheLife(LIVE);
     return all;
   } catch (e) {
     console.error(e);
@@ -73,47 +79,14 @@ export async function getCategory(slug: string) {
 }
 
 /**
- * Product lists refresh from WooCommerce every 10 minutes (served instantly from cache meanwhile).
- * A WooCommerce webhook to /api/revalidate refreshes them immediately.
- */
-const LIVE = { stale: 60, revalidate: 600, expire: 86400 } as const;
-
-/**
- * Categories that contain at least one PUBLISHED product, with counts taken from the published
- * products themselves (not WooCommerce's stored counts). Drafts never count: the Store API only
- * returns published products. Built from one light request per 100 products.
+ * Categories that contain at least one PUBLISHED product, with their published-product counts.
+ * WordPress keeps each category's count to published products only (a product set to Draft is
+ * subtracted straight away), so this is live data in one fast request — counting every product
+ * instead would take minutes on this server. Refreshed with the category list (every 10 minutes).
  */
 export async function getActiveCategories(): Promise<WCCategory[]> {
-  "use cache";
-  cacheTag("products", "categories");
-  try {
-    const [cats, counts] = await Promise.all([getAllCategories(), publishedCategoryCounts()]);
-    if (!counts) {
-      cacheLife("seconds");
-      return [];
-    }
-    cacheLife(LIVE);
-    return cats.filter((c) => (counts.get(c.id) ?? 0) > 0).map((c) => ({ ...c, count: counts.get(c.id)! }));
-  } catch (e) {
-    console.error(e);
-    cacheLife("seconds");
-    return [];
-  }
-}
-
-async function publishedCategoryCounts(): Promise<Map<number, number> | null> {
-  const counts = new Map<number, number>();
-  let totalPages = 1;
-  for (let page = 1; page <= totalPages && page <= 50; page++) {
-    let got: { data: { categories: { id: number }[] }[]; totalPages: number } | null = null;
-    for (let attempt = 0; attempt < 3 && !got; attempt++) {
-      got = await storeGet<{ categories: { id: number }[] }[]>("/products", { per_page: 100, page, _fields: "id,categories" }, 30000).catch(() => null);
-    }
-    if (!got) return null; // incomplete data would hide real categories: don't use it
-    totalPages = got.totalPages;
-    for (const p of got.data) for (const c of p.categories) counts.set(c.id, (counts.get(c.id) ?? 0) + 1);
-  }
-  return counts;
+  const cats = await getAllCategories();
+  return cats.filter((c) => c.count > 0);
 }
 
 /** The product's own category (not a store-wide list like "Shop" or "Best Seller"), for breadcrumbs and "related" products. */
@@ -262,6 +235,33 @@ export async function getVariations(slug: string, variationIds: number[]): Promi
     const list = await Promise.all(ids.map((id) => storeGet<WCProduct>(`/products/${id}`).then((r) => r.data).catch(() => null)));
     cacheLife(LIVE);
     return list.filter(Boolean) as WCProduct[];
+  } catch (e) {
+    console.error(e);
+    cacheLife("seconds");
+    return [];
+  }
+}
+
+/**
+ * Addresses of all PUBLISHED products, newest first (for the sitemap). Uses WordPress's own post
+ * list, which is far faster than loading full product data; drafts are never included.
+ */
+export async function getPublishedProductSlugs(): Promise<{ slug: string; modified: string }[]> {
+  "use cache";
+  cacheTag("products");
+  try {
+    const out: { slug: string; modified: string }[] = [];
+    let totalPages = 1;
+    for (let page = 1; page <= totalPages && page <= 50; page++) {
+      const res = await fetch(buildUrl("/wp-json/wp/v2/product", { per_page: 100, page, orderby: "date", order: "desc", _fields: "slug,modified_gmt" }), {
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) throw new Error(`product list ${res.status}`);
+      totalPages = Number(res.headers.get("x-wp-totalpages") ?? 1);
+      for (const r of (await res.json()) as { slug: string; modified_gmt: string }[]) out.push({ slug: r.slug, modified: r.modified_gmt });
+    }
+    cacheLife(LIVE);
+    return out;
   } catch (e) {
     console.error(e);
     cacheLife("seconds");

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { connection } from "next/server";
 import { SITE } from "@/lib/config";
-import { getActiveCategories, getProducts } from "@/lib/woo";
+import { getActiveCategories, getPublishedProductSlugs } from "@/lib/woo";
 
 // Built on request (not during deploy) so a slow WordPress server can't fail the build.
 // Only published products and categories that currently have published products are listed,
@@ -18,11 +18,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   const cats = await getActiveCategories();
   const catUrls: MetadataRoute.Sitemap = cats.map((c) => ({ url: `${base}/shop?category=${c.slug}`, changeFrequency: "weekly", priority: 0.7 }));
-  const products: MetadataRoute.Sitemap = [];
-  for (let page = 1; page <= 30; page++) {
-    const { products: list, totalPages } = await getProducts({ page, perPage: 100, orderby: "date", order: "desc" });
-    products.push(...list.map((p) => ({ url: `${base}/product/${p.slug}`, changeFrequency: "weekly" as const, priority: 0.6 })));
-    if (page >= totalPages) break;
-  }
+  const products: MetadataRoute.Sitemap = (await getPublishedProductSlugs()).map((p) => ({
+    url: `${base}/product/${p.slug}`,
+    lastModified: p.modified ? new Date(p.modified + "Z") : undefined,
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
   return [...pages, ...catUrls, ...products];
 }
