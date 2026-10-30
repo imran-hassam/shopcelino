@@ -14,6 +14,8 @@ import { ProductCard } from "@/components/ProductCard";
 import { Carousel } from "@/components/Carousel";
 import { Tabs } from "@/components/Tabs";
 import { Reveal } from "@/components/Reveal";
+import { FitStyleGuide } from "@/components/FitStyleGuide";
+import { getSizeGuide } from "@/lib/guides";
 
 /** Hero photo: a real Shop Celino model shot (from the store's own product photography, white studio backdrop). */
 const HERO_IMAGE = {
@@ -255,6 +257,38 @@ async function HomeContent() {
           </div>
         </section>
       )}
+
+      {/* FIT & STYLE GUIDE — last section, right above the footer */}
+      <Suspense fallback={<GuideSkeleton />}>
+        <GuideSection />
+      </Suspense>
     </>
+  );
+}
+
+/** Fit & Style Guide: real store photos and real product sizes (see lib/guides.ts). */
+async function GuideSection() {
+  const [sizeTabs, dresses, tops, sweaters] = await Promise.all([
+    getSizeGuide(),
+    getProducts({ category: "womens-dresses", perPage: 2 }),
+    getProducts({ category: "womens-blouses", perPage: 2 }),
+    getProducts({ category: "women-sweaters", perPage: 2 }),
+  ]);
+  const pick = (list: WCProduct[]) => {
+    const p = list.find((x) => x.images.length);
+    return p ? { src: p.images[0].src, alt: p.images[0].alt || decodeEntities(p.name) } : null;
+  };
+  return <FitStyleGuide sizeTabs={sizeTabs} images={{ size: pick(dresses.products), style: pick(tops.products), drawer: pick(sweaters.products) }} />;
+}
+
+function GuideSkeleton() {
+  return (
+    <div className="mx-auto max-w-[1440px] animate-pulse px-5 py-20 md:px-8" aria-hidden>
+      <div className="mx-auto h-28 max-w-md rounded-2xl bg-white/50" />
+      <div className="mt-12 grid gap-6 md:grid-cols-2">
+        <div className="aspect-[4/3] rounded-3xl bg-white/50" />
+        <div className="aspect-[4/3] rounded-3xl bg-white/50" />
+      </div>
+    </div>
   );
 }
