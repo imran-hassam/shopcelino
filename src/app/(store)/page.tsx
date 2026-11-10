@@ -17,7 +17,10 @@ import { Tabs } from "@/components/Tabs";
 import { Reveal } from "@/components/Reveal";
 import { FitStyleGuide } from "@/components/FitStyleGuide";
 import { getSizeGuide } from "@/lib/guides";
-import { ShowroomRail, type RailProduct } from "@/components/ShowroomRail";
+import { ShowroomRail, type Garment, type RailProduct } from "@/components/ShowroomRail";
+import railGarments from "@/lib/rail-garments.json";
+
+const RAIL_GARMENTS = railGarments as { productId: number; front: Garment; back?: Garment }[];
 
 /** Hero photo: a real Shop Celino model shot (from the store's own product photography, white studio backdrop). */
 const HERO_IMAGE = {
@@ -300,14 +303,21 @@ async function GuideSection() {
   return <FitStyleGuide sizeTabs={sizeTabs} images={GUIDE_IMAGES} />;
 }
 
-/** Newest published products for the "On the Rail" section (real images, names, prices and links). */
+/**
+ * "On the Rail": garments cut out of each product's own photos (no models), listed in
+ * lib/rail-garments.json. Name, slug and price come live from the store; a product that is
+ * no longer published simply drops off the rail.
+ */
 async function RailSection() {
-  const { products } = await getProducts({ perPage: 18 });
-  // Photos only: size-chart images (e.g. "…_sizechart.jpg") are left out of the rail.
-  const isChart = (src: string) => /size[-_ ]?(chart|guide)|measure/i.test(src.split("/").pop() ?? "");
-  const items: RailProduct[] = products
-    .map((p) => ({ id: p.id, name: p.name, slug: p.slug, on_sale: p.on_sale, prices: p.prices, images: p.images.filter((i) => !isChart(i.src)).slice(0, 2) }))
-    .filter((p) => p.images.length > 0);
+  const ids = RAIL_GARMENTS.map((g) => g.productId);
+  if (ids.length < 5) return null;
+  const { products } = await getProducts({ include: ids, perPage: ids.length });
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const items: RailProduct[] = RAIL_GARMENTS.flatMap((g) => {
+    const p = byId.get(g.productId);
+    if (!p) return [];
+    return [{ id: p.id, name: p.name, slug: p.slug, on_sale: p.on_sale, prices: p.prices, front: g.front, ...(g.back ? { back: g.back } : {}) }];
+  });
   if (items.length < 5) return null;
   const ticker = ["New Arrivals", ...MENU_CATEGORIES.slice(0, 5).map((c) => c.label), SITE.name];
   return <ShowroomRail products={items} ticker={ticker} />;

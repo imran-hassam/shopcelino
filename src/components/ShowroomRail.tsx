@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play, X } from "lucide-react";
-import type { WCImage, WCPrices } from "@/lib/types";
+import type { WCPrices } from "@/lib/types";
 import { decodeEntities, formatMoney } from "@/lib/format";
+
+/** A garment cut out of the product's own photo (transparent WebP in /public/rail). */
+export type Garment = { src: string; w: number; h: number };
 
 /** The product fields this section needs (kept small: it is sent to the browser). */
 export type RailProduct = {
@@ -13,7 +16,9 @@ export type RailProduct = {
   slug: string;
   on_sale: boolean;
   prices: WCPrices;
-  images: WCImage[];
+  front: Garment;
+  /** Second photo of the same garment (often the back), cut out the same way. */
+  back?: Garment;
 };
 
 type Mode = "rack" | "show";
@@ -27,7 +32,7 @@ const mod = (a: number, n: number) => ((a % n) + n) % n;
 /** All sizes come from the width of the stage, so every screen gets a balanced rail. */
 function geometry(cw: number) {
   const W = cw < 400 ? 150 : cw < 640 ? 176 : cw < 1024 ? 206 : cw < 1280 ? 230 : 250; // front-facing card width
-  const H = Math.round((W * 4) / 3);
+  const H = Math.round(W * 1.5); // garment area under the hanger
   const gap = Math.round(W * (cw < 640 ? 0.3 : 0.32)); // spacing of the turned pieces
   const near = Math.round(W * 0.86); // centre-to-centre distance next to the front piece
   const spread = near - gap;
@@ -179,7 +184,7 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
     current.prices.price_range && current.prices.price_range.min_amount !== current.prices.price_range.max_amount
       ? `${formatMoney(current.prices.price_range.min_amount, current.prices)} – ${formatMoney(current.prices.price_range.max_amount, current.prices)}`
       : formatMoney(current.prices.price, current.prices);
-  const hasBack = mode === "show" && current.images.length > 1;
+  const hasBack = mode === "show" && !!current.back;
 
   const slots = [];
   for (let d = -r; d <= r; d++) slots.push(d);
@@ -270,9 +275,11 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
           const pl = place(d);
           const isFront = d === turned;
           const name = decodeEntities(p.name);
-          const [img, img2] = p.images;
-          const showBack = isFront && mode === "show" && back && !!img2;
-          const sizes = `${isFront && mode === "show" ? g.Ws : g.W}px`;
+          const showBack = isFront && mode === "show" && back && !!p.back;
+          // Hanger sized to the garment's shoulders; the garment hangs over it (hook shows above the neckline).
+          const shown = Math.min(g.W, g.H * (p.front.w / p.front.h));
+          const hangerW = Math.max(g.W * 0.42, Math.min(g.W * 0.74, shown * 0.82));
+          const hangerH = (hangerW * 44) / 120;
           return (
             <Link
               key={v}
@@ -324,21 +331,18 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
                   transition: `transform ${MOVE}`,
                 }}
               >
-                <Hanger width={g.W} height={g.hangerH} />
-                <div style={{ marginTop: -14 }} className="relative">
+                <div style={{ height: g.hangerH }} className="relative">
+                  <Hanger width={hangerW} height={hangerH} />
+                </div>
+                <div style={{ marginTop: -(g.hangerH - hangerH * 0.52) }} className="relative z-10">
                   <div className="relative [perspective:1400px]" style={{ height: g.H }}>
                     <div
                       className="relative size-full [transform-style:preserve-3d]"
-                      style={{ transform: showBack ? "rotateY(180deg)" : undefined, transition: "transform 800ms cubic-bezier(.65,0,.35,1)" }}
+                      style={{ transform: showBack ? "rotateY(180deg)" : undefined, transition: "transform 900ms cubic-bezier(.65,0,.35,1)" }}
                     >
-                      <Face img={img} alt={name} sizes={sizes} />
-                      {img2 && isFront && mode === "show" && <Face img={img2} alt={`${name} — another view`} sizes={sizes} back />}
+                      <Face garment={p.front} alt={name} shade={pl.shade} eager={Math.abs(d) <= 2} />
+                      {p.back && isFront && mode === "show" && <Face garment={p.back} alt={`${name} — another view`} shade={0} back />}
                     </div>
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 rounded-2xl bg-heading"
-                      style={{ opacity: pl.shade, transition: "opacity 600ms ease" }}
-                    />
                   </div>
                 </div>
               </div>
@@ -454,7 +458,7 @@ function Hanger({ width, height }: { width: number; height: number }) {
       viewBox="0 0 120 44"
       width={width * 0.74}
       height={height}
-      className="pointer-events-none relative z-10 mx-auto block text-heading"
+      className="pointer-events-none absolute left-1/2 top-0 block -translate-x-1/2 text-heading"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
@@ -466,37 +470,25 @@ function Hanger({ width, height }: { width: number; height: number }) {
   );
 }
 
-function Face({ img, alt, sizes, back = false }: { img?: WCImage; alt: string; sizes: string; back?: boolean }) {
+/** One side of a garment: the cut-out photo, hanging from the top, with a shadow that follows its shape. */
+function Face({ garment, alt, shade, back = false, eager = false }: { garment: Garment; alt: string; shade: number; back?: boolean; eager?: boolean }) {
   return (
-    <div
-      className="glass-card absolute inset-0 overflow-hidden rounded-2xl p-1.5 shadow-[16px_26px_40px_-26px_rgba(34,32,29,.55)] [backface-visibility:hidden]"
-      style={back ? { transform: "rotateY(180deg)" } : undefined}
-    >
-      <div className="relative size-full overflow-hidden rounded-xl bg-card">
-        {img && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={img.thumbnail}
-            srcSet={img.thumbnail_srcset || img.srcset}
-            sizes={sizes}
-            alt={img.alt || alt}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            className="absolute inset-0 size-full object-cover object-top"
-            onError={(e) => {
-              // The image host sometimes drops a burst of requests: one quiet retry.
-              const el = e.currentTarget;
-              if (el.dataset.retry) return;
-              el.dataset.retry = "1";
-              const url = new URL(el.currentSrc || el.src);
-              url.searchParams.set("retry", "1");
-              el.removeAttribute("srcset");
-              el.src = url.toString();
-            }}
-          />
-        )}
-      </div>
+    <div className="absolute inset-0 [backface-visibility:hidden]" style={back ? { transform: "rotateY(180deg)" } : undefined}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={garment.src}
+        width={garment.w}
+        height={garment.h}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        draggable={false}
+        className="absolute inset-0 size-full object-contain object-top"
+        style={{
+          filter: `drop-shadow(14px 22px 16px rgba(34,32,29,.22)) brightness(${1 - shade})`,
+          transition: "filter 600ms ease",
+        }}
+      />
     </div>
   );
 }
