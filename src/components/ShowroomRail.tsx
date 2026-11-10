@@ -158,7 +158,10 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
       return { x, rot: -s * SIDE_ANGLE, scale: 1, op: Math.abs(d) === 1 ? 0.5 : 0, blur: 3, z: 90 - Math.abs(d), shade: 0.12 };
     }
     const rel = d - turned;
-    const x = d * g.gap + (rel > 0 ? g.spread : rel < 0 ? -g.spread : 0);
+    // The turned piece stays exactly where it hangs on the resting rail (so it stays under the
+    // pointer); the pieces around it slide to make room.
+    const shift = turned === 0 ? 0 : Math.sign(turned) * g.spread;
+    const x = d * g.gap + (rel > 0 ? g.spread : rel < 0 ? -g.spread : 0) + shift;
     const inside = Math.abs(x) < g.half - g.W * 0.2;
     return {
       x,
@@ -201,6 +204,29 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
         className={`relative mt-10 touch-pan-y select-none transition-opacity duration-500 ${cw === null ? "opacity-0" : "opacity-100"}`}
         style={{ height: g.stageH }}
         onPointerLeave={() => setHover(null)}
+        onPointerMove={(e) => {
+          // Mouse: which piece the pointer is over, measured on the resting rail, so turning a
+          // piece never moves another one under the pointer (no flicker between two pieces).
+          if (e.pointerType !== "mouse" || mode !== "rack") return;
+          const box = e.currentTarget.getBoundingClientRect();
+          const px = e.clientX - box.left - box.width / 2;
+          const py = e.clientY - box.top;
+          let best: number | null = null;
+          if (py > 8 && py < 8 + g.hangerH + g.H) {
+            let dist = Infinity;
+            for (let d = -r; d <= r; d++) {
+              const rest = d * g.gap + (d > 0 ? g.spread : d < 0 ? -g.spread : 0);
+              if (Math.abs(rest) >= g.half - g.W * 0.2) continue;
+              const dd = Math.abs(px - rest);
+              if (dd < dist) {
+                dist = dd;
+                best = d;
+              }
+            }
+            if (dist > g.W * 0.6) best = null;
+          }
+          setHover((h) => (h === best ? h : best));
+        }}
         onPointerDown={(e) => {
           pointerType.current = e.pointerType;
           swiped.current = false;
@@ -267,13 +293,6 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
                 pointerEvents: pl.op > 0 ? undefined : "none",
                 transform: `translate3d(${Math.round(pl.x - g.W / 2)}px,0,0)`,
                 transition: `transform ${MOVE}, opacity 600ms ease, filter 600ms ease`,
-              }}
-              // Pointing at a piece turns it to the front and holds the rail still; moving off lets it run again.
-              onPointerEnter={(e) => {
-                if (e.pointerType === "mouse" && mode === "rack") setHover(d);
-              }}
-              onPointerLeave={(e) => {
-                if (e.pointerType === "mouse" && mode === "rack") setHover((h) => (h === d ? null : h));
               }}
               onFocus={() => mode === "rack" && setHover(d)}
               onClick={(e) => {
