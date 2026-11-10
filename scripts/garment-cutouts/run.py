@@ -28,13 +28,20 @@ LIMIT = int(os.environ.get("LIMIT", "60"))
 MAX_SIDE = 1000
 
 os.makedirs(OUT, exist_ok=True)
+# The store's firewall turns away requests that do not look like a normal browser.
+http = requests.Session()
+http.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+    "Accept": "application/json, image/avif, image/webp, image/*, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+})
 chart = re.compile(r"size[-_ ]?(chart|guide)|measure", re.I)
 
 
 def products():
     out, page = [], 1
     while len(out) < LIMIT:
-        r = requests.get(
+        r = http.get(
             STORE,
             params={"per_page": 50, "page": page, "orderby": "date", "order": "desc", "_fields": "id,slug,name,images,categories"},
             timeout=120,
@@ -49,7 +56,7 @@ def products():
 
 
 def load(url):
-    r = requests.get(url, timeout=120)
+    r = http.get(url, timeout=120)
     r.raise_for_status()
     im = Image.open(io.BytesIO(r.content)).convert("RGB")
     im.thumbnail((MAX_SIDE, MAX_SIDE))
