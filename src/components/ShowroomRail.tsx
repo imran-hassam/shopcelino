@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play, X } from "lucide-react";
 import type { WCImage, WCPrices } from "@/lib/types";
 import { decodeEntities, formatMoney } from "@/lib/format";
-import { Price } from "./Price";
 
 /** The product fields this section needs (kept small: it is sent to the browser). */
 export type RailProduct = {
@@ -341,7 +340,6 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
                       style={{ opacity: pl.shade, transition: "opacity 600ms ease" }}
                     />
                   </div>
-                  {isFront && mode === "show" && <SwingTag product={p} hangerH={g.hangerH} />}
                 </div>
               </div>
             </Link>
@@ -366,21 +364,15 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
       </div>
 
       {/* CAPTION */}
-      <div className="mx-auto flex min-h-[176px] max-w-[1440px] flex-col items-center px-5 pb-14 pt-4 text-center md:px-8">
-        <h3 className={`max-w-xl text-[20px] leading-snug md:text-[24px] ${mode === "show" ? "line-clamp-2" : "line-clamp-1"}`}>
-          <Link href={`/product/${current.slug}`} prefetch={false} className="hover:text-primary-hover">
-            {currentName}
-          </Link>
-        </h3>
-        <div className="mt-2">
-          <Price prices={current.prices} onSale={current.on_sale} />
-        </div>
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+      {/* No visible title or price here (product pages show them); the buttons carry the product. */}
+      <div className="mx-auto flex max-w-[1440px] flex-col items-center px-5 pb-14 pt-2 text-center md:px-8">
+        <div className="flex min-h-[52px] flex-wrap items-center justify-center gap-3">
           {mode === "rack" ? (
             <>
               <button
                 type="button"
                 onClick={() => open(offset + turned)}
+                aria-label={`Take a closer look at ${currentName}`}
                 className="inline-flex items-center rounded-full bg-heading px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-primary hover:text-heading"
               >
                 Take a closer look
@@ -420,6 +412,7 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
               <Link
                 href={`/product/${current.slug}`}
                 prefetch={false}
+                aria-label={`See sizes and availability for ${currentName}`}
                 className="inline-flex items-center gap-1.5 border-b border-heading/40 pb-0.5 text-[12px] font-semibold uppercase tracking-[0.18em] transition-colors hover:border-primary hover:text-primary-hover"
               >
                 See sizes &amp; availability <ArrowUpRight className="size-4" strokeWidth={1.5} />
@@ -503,27 +496,6 @@ function Face({ img, alt, sizes, back = false }: { img?: WCImage; alt: string; s
             }}
           />
         )}
-      </div>
-    </div>
-  );
-}
-
-/** Price tag hanging from the hanger, like the swing tags in the reference. Real price only. */
-function SwingTag({ product, hangerH }: { product: RailProduct; hangerH: number }) {
-  const pr = product.prices;
-  const range = pr.price_range && pr.price_range.min_amount !== pr.price_range.max_amount;
-  const price = range ? `From ${formatMoney(pr.price_range!.min_amount, pr)}` : formatMoney(pr.price, pr);
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute left-[calc(100%-6px)] origin-top animate-[tagsway_3.4s_ease-in-out_infinite]"
-      style={{ top: 14 - hangerH * 0.55 }}
-    >
-      <div className="mx-auto h-9 w-px bg-heading/40" />
-      <div className="glass-card -mt-px flex w-[58px] flex-col items-center gap-1 rounded-md px-1.5 pb-2.5 pt-2 text-center">
-        <span className="size-1.5 rounded-full border border-heading/40" />
-        {product.on_sale && <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-primary-hover">Sale</span>}
-        <span className="text-[10px] font-semibold leading-tight">{price}</span>
       </div>
     </div>
   );
