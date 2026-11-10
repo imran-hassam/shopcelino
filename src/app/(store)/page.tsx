@@ -20,6 +20,9 @@ import { getSizeGuide } from "@/lib/guides";
 import { ShowroomRail, type Garment, type RailProduct } from "@/components/ShowroomRail";
 import railGarments from "@/lib/rail-garments.json";
 
+/** The "On the Rail" homepage section is temporarily hidden. Set to true to show it again. */
+const SHOW_RAIL: boolean = false;
+
 const RAIL_GARMENTS = railGarments as { productId: number; front: Garment; back?: Garment }[];
 
 /** Hero photo: a real Shop Celino model shot (from the store's own product photography, white studio backdrop). */
@@ -282,10 +285,13 @@ async function HomeContent() {
         <GuideSection />
       </Suspense>
 
-      {/* ON THE RAIL — newest pieces hanging on a clothes rail; directly after the Fit & Style Guide */}
-      <Suspense fallback={<RailSkeleton />}>
-        <RailSection />
-      </Suspense>
+      {/* ON THE RAIL — garments hanging on a clothes rail; directly after the Fit & Style Guide.
+          Temporarily hidden: set SHOW_RAIL to true to bring it back (code and images are unchanged). */}
+      {SHOW_RAIL && (
+        <Suspense fallback={<RailSkeleton />}>
+          <RailSection />
+        </Suspense>
+      )}
     </>
   );
 }
