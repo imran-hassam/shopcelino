@@ -38,7 +38,7 @@ function geometry(cw: number) {
   const railW = Math.min(cw - 24, 1180);
   const half = railW / 2;
   // The front card's top hangs from the rail; stage height fits the close-up plus room for its shadow.
-  const stageH = Math.round(8 + (hangerH - 8 + H) * scale + 36);
+  const stageH = Math.round(8 + (hangerH - 14 + H) * scale + 36);
   return { W, H, gap, near, spread, Ws, scale, hangerH, railW, half, stageH };
 }
 
@@ -58,7 +58,6 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
   const [inView, setInView] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const [userPaused, setUserPaused] = useState(false);
-  const [pointerInside, setPointerInside] = useState(false);
   const [focusInside, setFocusInside] = useState(false);
   const [reduce, setReduce] = useState(false);
   const [tick, setTick] = useState(0);
@@ -90,7 +89,7 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
   }, []);
 
   const running =
-    n > 1 && cw !== null && inView && pageVisible && !userPaused && !reduce && !pointerInside && !focusInside && mode === "rack";
+    n > 1 && cw !== null && inView && pageVisible && !userPaused && !reduce && hover === null && !focusInside && mode === "rack";
 
   // Endless loop: every few seconds the rail moves one piece along. Products are taken from the
   // list in a circle (offset grows forever, product = offset mod n), so there is never a reset.
@@ -201,11 +200,7 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
         aria-label="Newest pieces on the rail"
         className={`relative mt-10 touch-pan-y select-none transition-opacity duration-500 ${cw === null ? "opacity-0" : "opacity-100"}`}
         style={{ height: g.stageH }}
-        onPointerEnter={(e) => e.pointerType === "mouse" && setPointerInside(true)}
-        onPointerLeave={() => {
-          setPointerInside(false);
-          setHover(null);
-        }}
+        onPointerLeave={() => setHover(null)}
         onPointerDown={(e) => {
           pointerType.current = e.pointerType;
           swiped.current = false;
@@ -273,8 +268,12 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
                 transform: `translate3d(${Math.round(pl.x - g.W / 2)}px,0,0)`,
                 transition: `transform ${MOVE}, opacity 600ms ease, filter 600ms ease`,
               }}
+              // Pointing at a piece turns it to the front and holds the rail still; moving off lets it run again.
               onPointerEnter={(e) => {
                 if (e.pointerType === "mouse" && mode === "rack") setHover(d);
+              }}
+              onPointerLeave={(e) => {
+                if (e.pointerType === "mouse" && mode === "rack") setHover((h) => (h === d ? null : h));
               }}
               onFocus={() => mode === "rack" && setHover(d)}
               onClick={(e) => {
@@ -308,7 +307,7 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
                 }}
               >
                 <Hanger width={g.W} height={g.hangerH} />
-                <div style={{ marginTop: g.hangerH - 12 }} className="relative">
+                <div style={{ marginTop: -14 }} className="relative">
                   <div className="relative [perspective:1400px]" style={{ height: g.H }}>
                     <div
                       className="relative size-full [transform-style:preserve-3d]"
@@ -499,7 +498,7 @@ function SwingTag({ product, hangerH }: { product: RailProduct; hangerH: number 
     <div
       aria-hidden
       className="pointer-events-none absolute left-[calc(100%-6px)] origin-top animate-[tagsway_3.4s_ease-in-out_infinite]"
-      style={{ top: -hangerH * 0.42 }}
+      style={{ top: 14 - hangerH * 0.55 }}
     >
       <div className="mx-auto h-9 w-px bg-heading/40" />
       <div className="glass-card -mt-px flex w-[58px] flex-col items-center gap-1 rounded-md px-1.5 pb-2.5 pt-2 text-center">
