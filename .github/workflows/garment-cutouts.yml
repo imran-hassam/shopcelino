@@ -1,0 +1,36 @@
+# Cuts the clothes out of the store's own product photos for review (see scripts/garment-cutouts).
+# Runs only when the script changes on the garment-cutouts branch, or by hand. Results are committed
+# to the same branch (commits made by the workflow token do not start the workflow again).
+name: Garment cut-outs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [garment-cutouts]
+    paths: [scripts/garment-cutouts/**, .github/workflows/garment-cutouts.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  cutouts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install "rembg[cpu]==2.0.59" scipy pillow requests
+      - name: Cut out clothes
+        env:
+          LIMIT: "60"
+        run: python scripts/garment-cutouts/run.py cutouts
+      - name: Commit results
+        run: |
+          git config user.name "garment-cutouts bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add cutouts
+          git commit -m "Garment cut-outs for review [skip ci]" || echo "nothing to commit"
+          git push
