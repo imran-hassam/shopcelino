@@ -42,7 +42,7 @@ function geometry(cw: number) {
   const railW = Math.min(cw - 24, 1180);
   const half = railW / 2;
   // The front card's top hangs from the rail; stage height fits the close-up plus room for its shadow.
-  const stageH = Math.round(8 + (hangerH - 14 + H) * scale + 28);
+  const stageH = Math.round(8 + (hangerH + H) * scale + 8);
   return { W, H, gap, near, spread, Ws, scale, hangerH, railW, half, stageH };
 }
 
@@ -170,7 +170,7 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
     return {
       x,
       rot: rel === 0 ? 0 : rel < 0 ? SIDE_ANGLE : -SIDE_ANGLE,
-      scale: 1,
+      scale: rel === 0 ? 1.08 : 1, // the piece facing front stands out a little
       op: inside ? 1 : 0,
       blur: 0,
       z: 100 - Math.abs(rel),
