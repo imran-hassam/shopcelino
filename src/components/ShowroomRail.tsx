@@ -61,7 +61,8 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
   // Autoplay conditions
   const [inView, setInView] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
-  const [userPaused, setUserPaused] = useState(false);
+  // null = follow the device (moves unless reduced motion is on); otherwise the visitor's own choice.
+  const [userChoice, setUserChoice] = useState<"play" | "pause" | null>(null);
   const [focusInside, setFocusInside] = useState(false);
   const [reduce, setReduce] = useState(false);
   const [tick, setTick] = useState(0);
@@ -92,8 +93,9 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
     };
   }, []);
 
+  const autoplayOn = userChoice ? userChoice === "play" : !reduce;
   const running =
-    n > 1 && cw !== null && inView && pageVisible && !userPaused && !reduce && hover === null && !focusInside && mode === "rack";
+    n > 1 && cw !== null && inView && pageVisible && autoplayOn && hover === null && !focusInside && mode === "rack";
 
   // Endless loop: every few seconds the rail moves one piece along. Products are taken from the
   // list in a circle (offset grows forever, product = offset mod n), so there is never a reset.
@@ -383,12 +385,11 @@ export function ShowroomRail({ products, ticker }: { products: RailProduct[]; ti
               </button>
               <button
                 type="button"
-                onClick={() => setUserPaused((p) => !p)}
-                aria-label={userPaused || reduce ? "Play the rail" : "Pause the rail"}
-                aria-pressed={userPaused}
+                onClick={() => setUserChoice(autoplayOn ? "pause" : "play")}
+                aria-label={autoplayOn ? "Pause the rail" : "Play the rail"}
                 className="glass-chip grid size-12 place-items-center rounded-full transition-colors hover:border-primary hover:text-primary-hover"
               >
-                {userPaused || reduce ? <Play className="size-4" strokeWidth={1.5} /> : <Pause className="size-4" strokeWidth={1.5} />}
+                {!autoplayOn ? <Play className="size-4" strokeWidth={1.5} /> : <Pause className="size-4" strokeWidth={1.5} />}
               </button>
             </>
           ) : (
