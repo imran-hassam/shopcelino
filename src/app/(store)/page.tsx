@@ -17,6 +17,7 @@ import { Tabs } from "@/components/Tabs";
 import { Reveal } from "@/components/Reveal";
 import { FitStyleGuide } from "@/components/FitStyleGuide";
 import { getSizeGuide } from "@/lib/guides";
+import { ShowroomRail, type RailProduct } from "@/components/ShowroomRail";
 
 /** Hero photo: a real Shop Celino model shot (from the store's own product photography, white studio backdrop). */
 const HERO_IMAGE = {
@@ -277,6 +278,11 @@ async function HomeContent() {
       <Suspense fallback={<GuideSkeleton />}>
         <GuideSection />
       </Suspense>
+
+      {/* ON THE RAIL — newest pieces hanging on a clothes rail; directly after the Fit & Style Guide */}
+      <Suspense fallback={<RailSkeleton />}>
+        <RailSection />
+      </Suspense>
     </>
   );
 }
@@ -292,6 +298,26 @@ const GUIDE_IMAGES = {
 async function GuideSection() {
   const sizeTabs = await getSizeGuide();
   return <FitStyleGuide sizeTabs={sizeTabs} images={GUIDE_IMAGES} />;
+}
+
+/** Newest published products for the "On the Rail" section (real images, names, prices and links). */
+async function RailSection() {
+  const { products } = await getProducts({ perPage: 18 });
+  const items: RailProduct[] = products
+    .filter((p) => p.images.length > 0)
+    .map((p) => ({ id: p.id, name: p.name, slug: p.slug, on_sale: p.on_sale, prices: p.prices, images: p.images.slice(0, 2) }));
+  if (items.length < 5) return null;
+  const ticker = ["New Arrivals", ...MENU_CATEGORIES.slice(0, 5).map((c) => c.label), SITE.name];
+  return <ShowroomRail products={items} ticker={ticker} />;
+}
+
+function RailSkeleton() {
+  return (
+    <div className="animate-pulse border-t border-white/70 bg-card/40 px-5 py-20" aria-hidden>
+      <div className="mx-auto h-28 max-w-md rounded-2xl bg-white/50" />
+      <div className="mx-auto mt-10 h-[440px] max-w-[1180px] rounded-3xl bg-white/40 md:h-[520px]" />
+    </div>
+  );
 }
 
 function GuideSkeleton() {
