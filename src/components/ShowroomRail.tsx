@@ -32,13 +32,13 @@ function geometry(cw: number) {
   const gap = Math.round(W * (cw < 640 ? 0.3 : 0.32)); // spacing of the turned pieces
   const near = Math.round(W * 0.86); // centre-to-centre distance next to the front piece
   const spread = near - gap;
-  const Ws = Math.round(Math.min(W * 1.26, cw * 0.62)); // close-up width
+  const Ws = Math.round(Math.min(W * 1.16, cw * 0.62)); // close-up width
   const scale = Ws / W;
   const hangerH = Math.round((W * 0.74 * 44) / 120);
   const railW = Math.min(cw - 24, 1180);
   const half = railW / 2;
   // The front card's top hangs from the rail; stage height fits the close-up plus room for its shadow.
-  const stageH = Math.round(8 + (hangerH - 14 + H) * scale + 36);
+  const stageH = Math.round(8 + (hangerH - 14 + H) * scale + 28);
   return { W, H, gap, near, spread, Ws, scale, hangerH, railW, half, stageH };
 }
 
