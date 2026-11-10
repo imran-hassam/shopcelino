@@ -303,9 +303,11 @@ async function GuideSection() {
 /** Newest published products for the "On the Rail" section (real images, names, prices and links). */
 async function RailSection() {
   const { products } = await getProducts({ perPage: 18 });
+  // Photos only: size-chart images (e.g. "…_sizechart.jpg") are left out of the rail.
+  const isChart = (src: string) => /size[-_ ]?(chart|guide)|measure/i.test(src.split("/").pop() ?? "");
   const items: RailProduct[] = products
-    .filter((p) => p.images.length > 0)
-    .map((p) => ({ id: p.id, name: p.name, slug: p.slug, on_sale: p.on_sale, prices: p.prices, images: p.images.slice(0, 2) }));
+    .map((p) => ({ id: p.id, name: p.name, slug: p.slug, on_sale: p.on_sale, prices: p.prices, images: p.images.filter((i) => !isChart(i.src)).slice(0, 2) }))
+    .filter((p) => p.images.length > 0);
   if (items.length < 5) return null;
   const ticker = ["New Arrivals", ...MENU_CATEGORIES.slice(0, 5).map((c) => c.label), SITE.name];
   return <ShowroomRail products={items} ticker={ticker} />;
