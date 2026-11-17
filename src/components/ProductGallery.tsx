@@ -17,8 +17,8 @@ import { createPortal } from "react-dom";
 import type { WCImage } from "@/lib/types";
 import { cutout, type Cutout } from "@/lib/cutout";
 
-const TURN_MS = 900; // ring turn + background change, as in the reference
-const AUTOPLAY_MS = 5000;
+const TURN_MS = 600; // ring turn + background change
+const AUTOPLAY_MS = 2800; // time between automatic turns
 const EASE = "cubic-bezier(.7,0,.3,1)";
 
 /** Site colours only (globals.css brand tokens). Stage colour steps through these. */
