@@ -144,7 +144,7 @@ export function ProductGallery({ images, name, label }: { images: WCImage[]; nam
   useEffect(() => {
     posRef.current = pos;
   }, [pos]);
-  const cuts = useCutouts(images, pos, geo?.cardW ?? 0);
+  const cuts = useCutouts(images, pos, geo?.cardH ?? 0);
 
   const goTo = useCallback(
     (i: number, dir?: number) => {
@@ -322,6 +322,8 @@ export function ProductGallery({ images, name, label }: { images: WCImage[]; nam
             const visible = s.o > 0.01;
             const cut = cuts[im.id];
             const ready = cut !== undefined;
+            // Cut-outs use their own shape (square studio shots stay full height); framed photos keep 3:4.
+            const boxW = cut ? geo.cardH * Math.min(1, cut.w / cut.h) : geo.cardW;
             const filters = [
               cut ? `drop-shadow(0 22px 18px rgba(34,32,29,${stage.dark ? 0.45 : 0.22}))` : "",
               s.blur > 0.05 ? `blur(${s.blur}px) saturate(${1 - s.blur * 0.15})` : "",
@@ -336,9 +338,9 @@ export function ProductGallery({ images, name, label }: { images: WCImage[]; nam
                 onClick={() => setViewer(i)}
                 className={`absolute left-1/2 top-0 block cursor-zoom-in ${cut === null ? "overflow-hidden rounded-2xl bg-card shadow-[0_28px_50px_-30px_rgba(34,32,29,.6)]" : ""}`}
                 style={{
-                  width: geo.cardW,
+                  width: boxW,
                   height: geo.cardH,
-                  transform: `translate3d(${s.x - geo.cardW / 2}px, ${geo.base - geo.cardH + s.y * geo.h}px, 0) scale(${s.s})`,
+                  transform: `translate3d(${s.x - boxW / 2}px, ${geo.base - geo.cardH + s.y * geo.h}px, 0) scale(${s.s})`,
                   transformOrigin: "50% 100%",
                   opacity: ready ? s.o : 0,
                   zIndex: Math.round(s.z * 10),
