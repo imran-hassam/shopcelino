@@ -112,8 +112,8 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, "\\u003c") }} />
 
       <div className="mx-auto max-w-[1440px] px-5 pb-20 pt-8 md:px-8 md:pt-12">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14">
-        <ProductGallery images={product.images} name={name} />
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_440px] xl:gap-12">
+        <ProductGallery images={product.images} name={name} label={mainCat ? categoryLabel(mainCat.slug, decodeEntities(mainCat.name)) : undefined} />
 
         <div>
           <div className="glass-card rounded-3xl p-5 sm:p-7 md:p-8">
@@ -176,8 +176,8 @@ async function ProductContent({ params }: { params: Promise<{ slug: string }> })
 function ProductSkeleton() {
   return (
     <>
-    <div className="mx-auto grid max-w-[1440px] animate-pulse gap-10 px-5 pb-20 pt-8 md:px-8 md:pt-12 lg:grid-cols-[1.15fr_1fr]">
-      <div className="aspect-[4/5] rounded-3xl bg-white/50" />
+    <div className="mx-auto grid min-h-svh max-w-[1440px] content-start animate-pulse gap-10 px-5 pb-20 pt-8 md:px-8 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] xl:grid-cols-[minmax(0,1fr)_440px]">
+      <div className="aspect-[4/5] rounded-3xl bg-white/50 sm:aspect-[4/3] lg:aspect-auto lg:h-[clamp(460px,76svh,760px)]" />
       <div className="space-y-4">
         <div className="h-10 w-3/4 rounded bg-card" />
         <div className="h-6 w-1/4 rounded bg-card" />
